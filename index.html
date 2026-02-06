@@ -1,0 +1,1282 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>U Cavaddu Runner - Catania Edition</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #1a0a0a;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    overflow: hidden;
+    font-family: 'Courier New', monospace;
+  }
+  #wrap {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  canvas {
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    cursor: pointer;
+    max-width: 100vw;
+    max-height: 100vh;
+  }
+  #introVideo {
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 60vw; height: auto;
+    max-height: 70vh;
+    object-fit: contain;
+    background: #000;
+    border: 3px solid #ff6633;
+    display: none;
+    z-index: 100;
+    cursor: pointer;
+  }
+  #videoBg {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: rgba(0,0,0,0.8);
+    display: none;
+    z-index: 99;
+  }
+  #skipBtn {
+    position: fixed;
+    bottom: 30px; right: 30px;
+    z-index: 101;
+    display: none;
+    background: rgba(0,0,0,0.7);
+    color: #ffcc00;
+    border: 2px solid #ff6633;
+    padding: 10px 24px;
+    font-family: 'Courier New', monospace;
+    font-size: 15px;
+    cursor: pointer;
+  }
+  #skipBtn:hover { background: rgba(255,68,0,0.5); }
+  #resetBtn {
+    position: fixed;
+    top: 8px; left: 8px;
+    z-index: 50;
+    background: rgba(0,0,0,0.5);
+    color: #888;
+    border: 1px solid #444;
+    padding: 4px 10px;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    cursor: pointer;
+  }
+  #resetBtn:hover { color: #ff4400; border-color: #ff4400; }
+</style>
+</head>
+<body>
+<div id="videoBg"></div>
+<div id="wrap">
+  <canvas id="game"></canvas>
+  <video id="introVideo" playsinline></video>
+  <button id="skipBtn">SKIP >></button>
+</div>
+<button id="resetBtn">DEV: Reset</button>
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+
+// ==================== BACKGROUND IMAGE ====================
+const ROAD_HEIGHT = 50; // road drawn below the full image
+const bgImage = new Image();
+bgImage.src = 'bg.webp';
+let bgLoaded = false;
+let bgH = 540; // will be set on load
+bgImage.onload = () => {
+  const maxW = 960;
+  let w = bgImage.naturalWidth, h = bgImage.naturalHeight;
+  const scale = Math.min(maxW / w, 1);
+  const scaledW = Math.floor(w * scale);
+  const scaledH = Math.floor(h * scale);
+  canvas.width = scaledW;
+  canvas.height = scaledH + ROAD_HEIGHT;
+  bgH = scaledH;
+  GROUND_Y = bgH; // ground line sits right at the bottom of the image
+  horse.y = GROUND_Y;
+  bgLoaded = true;
+};
+
+// Default canvas before image loads
+canvas.width = 960;
+canvas.height = 540 + ROAD_HEIGHT;
+
+// ==================== PIXEL HELPER ====================
+function px(x, y, w, h, color) {
+  ctx.fillStyle = color;
+  ctx.fillRect(Math.floor(x), Math.floor(y), w, h);
+}
+
+// ==================== WHITE/CREAM HORSE (smaller, s=2) ====================
+function drawHorseOutline(baseX, baseY, frame, jumping) {
+  // Draw horse silhouette in dark color for outline, then real horse on top
+  const offsets = [[-2,0],[2,0],[0,-2],[0,2],[-1,-1],[1,-1],[-1,1],[1,1]];
+  ctx.globalAlpha = 0.7;
+  for (const [ox, oy] of offsets) {
+    drawHorseBody(baseX + ox, baseY + oy, frame, jumping, true);
+  }
+  ctx.globalAlpha = 1.0;
+  drawHorseBody(baseX, baseY, frame, jumping, false);
+}
+
+function drawHorseBody(baseX, baseY, frame, jumping, outlineMode) {
+  const s = 2;
+
+  // Outline mode: everything is dark
+  const body1 = outlineMode ? '#111' : '#f0e8dd';  // cream white
+  const body2 = outlineMode ? '#111' : '#e0d4c4';  // warm shadow
+  const body3 = outlineMode ? '#111' : '#d0c4b4';  // deeper shadow
+  const bodyHi = outlineMode ? '#111' : '#f8f4ee';  // highlight
+  const belly  = outlineMode ? '#111' : '#f5efe5';  // light belly
+  const backLn = outlineMode ? '#111' : '#c8baa8';  // back line
+  const mane   = outlineMode ? '#111' : '#1a1410';  // dark mane
+  const mane2  = outlineMode ? '#111' : '#2a2218';
+  const headC  = outlineMode ? '#111' : '#f0e8dd';
+  const snout  = outlineMode ? '#111' : '#f5ece0';
+  const muzzle = outlineMode ? '#111' : '#f8ddd0';  // pinkish muzzle
+  const earIn  = outlineMode ? '#111' : '#f0c8b8';
+  const eyeW   = outlineMode ? '#111' : '#fff';
+  const eyeP   = outlineMode ? '#111' : '#111';
+  const nostril= outlineMode ? '#111' : '#bfa090';
+  const mouth  = outlineMode ? '#111' : '#d0b8a8';
+  const legC1  = outlineMode ? '#111' : '#e0d4c4';
+  const legC2  = outlineMode ? '#111' : '#d0c0b0';
+  const jointC = outlineMode ? '#111' : '#c0b0a0';
+  const hoofC  = outlineMode ? '#111' : '#333';
+  const beerMug   = outlineMode ? '#111' : '#daa520';
+  const beerMugHi = outlineMode ? '#111' : '#e8b830';
+  const beerLiq   = outlineMode ? '#111' : '#e8a020';
+  const beerLiqHi = outlineMode ? '#111' : '#f0b830';
+  const beerFoam  = outlineMode ? '#111' : '#fffff0';
+  const beerFoam2 = outlineMode ? '#111' : '#fffde0';
+  const beerHandle= outlineMode ? '#111' : '#8a6020';
+  const beerRim   = outlineMode ? '#111' : '#8a5a10';
+  const splashC   = outlineMode ? '#111' : '#f0c040';
+  const splashC2  = outlineMode ? '#111' : '#ffe070';
+
+  // --- TAIL ---
+  const tailWag = jumping ? -3 : (frame === 0 ? 2 : -2);
+  px(baseX - 4*s, baseY - 22*s, s, 2*s, mane);
+  px(baseX - 5*s, baseY - 24*s + tailWag, s, 3*s, mane);
+  px(baseX - 6*s, baseY - 25*s + tailWag, s, 4*s, mane);
+  px(baseX - 7*s, baseY - 24*s + tailWag*1.5, s, 3*s, mane2);
+  px(baseX - 8*s, baseY - 23*s + tailWag*1.5, s, 2*s, mane2);
+
+  // --- BODY ---
+  for (let i = 0; i < 14; i++) {
+    const shade = i < 3 ? body1 : i < 6 ? bodyHi : i < 10 ? body2 : body3;
+    px(baseX + i*s, baseY - 24*s, s, 10*s, shade);
+  }
+  // Belly
+  for (let i = 3; i < 11; i++) {
+    px(baseX + i*s, baseY - 16*s, s, 2*s, belly);
+  }
+  // Back line
+  for (let i = 1; i < 13; i++) {
+    px(baseX + i*s, baseY - 24*s, s, s, backLn);
+  }
+  // Chest
+  px(baseX + 14*s, baseY - 23*s, s, 7*s, body2);
+  px(baseX + 14*s, baseY - 22*s, s, 5*s, body1);
+  // Shoulder highlights
+  px(baseX + 11*s, baseY - 22*s, 2*s, 3*s, bodyHi);
+  px(baseX + 3*s, baseY - 22*s, 2*s, 3*s, bodyHi);
+
+  // --- NECK ---
+  px(baseX + 14*s, baseY - 28*s, 2*s, 5*s, body2);
+  px(baseX + 15*s, baseY - 31*s, 2*s, 4*s, body2);
+  px(baseX + 16*s, baseY - 33*s, 2*s, 3*s, body2);
+  px(baseX + 14*s, baseY - 28*s, s, 5*s, body1);
+  px(baseX + 15*s, baseY - 31*s, s, 3*s, body1);
+
+  // --- MANE ---
+  const maneOff = frame === 0 ? 0 : s;
+  px(baseX + 13*s, baseY - 29*s + maneOff, s, 6*s, mane);
+  px(baseX + 14*s, baseY - 32*s + maneOff, s, 5*s, mane);
+  px(baseX + 15*s, baseY - 34*s + maneOff, s, 4*s, mane);
+  px(baseX + 16*s, baseY - 35*s + maneOff, s, 3*s, mane);
+  px(baseX + 12*s, baseY - 27*s + maneOff, s, 4*s, mane2);
+  px(baseX + 17*s, baseY - 37*s, s, 2*s, mane);
+
+  // --- HEAD ---
+  px(baseX + 17*s, baseY - 35*s, 3*s, 4*s, headC);
+  px(baseX + 18*s, baseY - 36*s, 2*s, 2*s, headC);
+  px(baseX + 20*s, baseY - 34*s, 3*s, 3*s, snout);
+  px(baseX + 21*s, baseY - 33*s, 2*s, 2*s, muzzle);
+  px(baseX + 22*s, baseY - 33*s, 2*s, 2*s, muzzle);
+
+  // --- EARS ---
+  px(baseX + 17*s, baseY - 37*s, s, 2*s, body2);
+  px(baseX + 19*s, baseY - 37*s, s, 2*s, body2);
+  px(baseX + 17*s, baseY - 36*s, s, s, earIn);
+  px(baseX + 19*s, baseY - 36*s, s, s, earIn);
+
+  // --- EYE ---
+  px(baseX + 19*s, baseY - 35*s, 2*s, 2*s, eyeW);
+  px(baseX + 20*s, baseY - 35*s, s, s, eyeP);
+
+  // --- NOSTRIL ---
+  px(baseX + 23*s, baseY - 33*s, s, s, nostril);
+  // --- MOUTH ---
+  px(baseX + 21*s, baseY - 31*s, 2*s, s, mouth);
+
+  // --- LEGS ---
+  if (jumping) {
+    px(baseX + 12*s, baseY - 14*s, 2*s, 3*s, legC1);
+    px(baseX + 13*s, baseY - 11*s, 2*s, 3*s, legC2);
+    px(baseX + 14*s, baseY - 9*s, 2*s, s, hoofC);
+    px(baseX + 2*s, baseY - 14*s, 2*s, 3*s, legC1);
+    px(baseX + 1*s, baseY - 11*s, 2*s, 3*s, legC2);
+    px(baseX + 0*s, baseY - 9*s, 2*s, s, hoofC);
+  } else if (frame === 0) {
+    px(baseX + 14*s, baseY - 14*s, 2*s, 4*s, legC1);
+    px(baseX + 15*s, baseY - 10*s, 2*s, 3*s, legC2);
+    px(baseX + 15*s, baseY - 7*s, s, s, jointC);
+    px(baseX + 16*s, baseY - 6*s, 2*s, 4*s, legC2);
+    px(baseX + 16*s, baseY - 2*s, 2*s, 2*s, hoofC);
+
+    px(baseX + 11*s, baseY - 14*s, 2*s, 4*s, legC1);
+    px(baseX + 10*s, baseY - 10*s, 2*s, 5*s, legC2);
+    px(baseX + 10*s, baseY - 5*s, s, s, jointC);
+    px(baseX + 10*s, baseY - 4*s, 2*s, 2*s, legC2);
+    px(baseX + 10*s, baseY - 2*s, 2*s, 2*s, hoofC);
+
+    px(baseX + 1*s, baseY - 14*s, 2*s, 4*s, legC1);
+    px(baseX + 0*s, baseY - 10*s, 2*s, 5*s, legC2);
+    px(baseX + 0*s, baseY - 5*s, s, s, jointC);
+    px(baseX - 1*s, baseY - 4*s, 2*s, 2*s, legC2);
+    px(baseX - 1*s, baseY - 2*s, 2*s, 2*s, hoofC);
+
+    px(baseX + 4*s, baseY - 14*s, 2*s, 3*s, legC1);
+    px(baseX + 5*s, baseY - 11*s, 2*s, 4*s, legC2);
+    px(baseX + 5*s, baseY - 7*s, s, s, jointC);
+    px(baseX + 6*s, baseY - 6*s, 2*s, 4*s, legC2);
+    px(baseX + 6*s, baseY - 2*s, 2*s, 2*s, hoofC);
+  } else {
+    px(baseX + 12*s, baseY - 14*s, 2*s, 4*s, legC1);
+    px(baseX + 11*s, baseY - 10*s, 2*s, 5*s, legC2);
+    px(baseX + 11*s, baseY - 5*s, s, s, jointC);
+    px(baseX + 11*s, baseY - 4*s, 2*s, 2*s, legC2);
+    px(baseX + 11*s, baseY - 2*s, 2*s, 2*s, hoofC);
+
+    px(baseX + 14*s, baseY - 14*s, 2*s, 3*s, legC1);
+    px(baseX + 15*s, baseY - 11*s, 2*s, 4*s, legC2);
+    px(baseX + 16*s, baseY - 6*s, 2*s, 4*s, legC2);
+    px(baseX + 16*s, baseY - 2*s, 2*s, 2*s, hoofC);
+
+    px(baseX + 3*s, baseY - 14*s, 2*s, 3*s, legC1);
+    px(baseX + 4*s, baseY - 11*s, 2*s, 4*s, legC2);
+    px(baseX + 5*s, baseY - 6*s, 2*s, 4*s, legC2);
+    px(baseX + 5*s, baseY - 2*s, 2*s, 2*s, hoofC);
+
+    px(baseX + 1*s, baseY - 14*s, 2*s, 4*s, legC1);
+    px(baseX - 1*s, baseY - 10*s, 2*s, 5*s, legC2);
+    px(baseX - 1*s, baseY - 5*s, s, s, jointC);
+    px(baseX - 2*s, baseY - 4*s, 2*s, 2*s, legC2);
+    px(baseX - 2*s, baseY - 2*s, 2*s, 2*s, hoofC);
+  }
+
+  // --- BEER MUG ---
+  const bx = baseX + 6*s;
+  const by = baseY - 18*s;
+  px(bx - s, by + s, s, 4*s, beerHandle);
+  px(bx - 2*s, by + 2*s, s, 2*s, beerHandle);
+  px(bx, by, 4*s, 6*s, beerMug);
+  px(bx + s, by, 2*s, 6*s, beerMugHi);
+  px(bx + s, by + s, 2*s, 4*s, beerLiq);
+  px(bx + s, by + 2*s, 2*s, 2*s, beerLiqHi);
+  px(bx, by - s, 4*s, s, beerFoam);
+  px(bx + s, by - 2*s, 2*s, s, beerFoam2);
+  px(bx, by + 6*s, 4*s, s, beerRim);
+
+  if (jumping) {
+    px(bx + s, by - 3*s, s, s, splashC);
+    px(bx + 3*s, by - 4*s, s, s, splashC);
+    px(bx - s, by - 2*s, s, s, splashC2);
+    px(bx + 5*s, by - 3*s, s, s, splashC);
+    px(bx + 2*s, by - 5*s, s, s, beerFoam);
+    px(bx + 4*s, by - 2*s, s, s, beerFoam);
+  }
+}
+
+// ==================== MAFIOSO TYPE 1: COLTELLO ====================
+function drawMafiosoColtello(x, y) {
+  const s = 3;
+  // Coppola
+  px(x + 2*s, y - 20*s, 6*s, s, '#222');
+  px(x + s, y - 19*s, 8*s, s, '#333');
+  px(x + 2*s, y - 21*s, 5*s, s, '#2a2a2a');
+  // Head
+  px(x + 3*s, y - 19*s, 4*s, 4*s, '#d4a574');
+  px(x + 3*s, y - 16*s, 4*s, s, '#b88a5a');
+  px(x + 4*s, y - 18*s, s, s, '#111');
+  px(x + 6*s, y - 18*s, s, s, '#111');
+  px(x + 4*s, y - 19*s, s, s, '#222');
+  px(x + 6*s, y - 19*s, s, s, '#222');
+  px(x + 4*s, y - 16*s, 2*s, s, '#8a4030');
+  // Neck
+  px(x + 4*s, y - 15*s, 2*s, s, '#c49564');
+  // Canottiera
+  px(x + 3*s, y - 14*s, 4*s, 6*s, '#eee');
+  px(x + 4*s, y - 14*s, 2*s, 6*s, '#fff');
+  px(x + 4*s, y - 13*s, 2*s, s, '#daa520');
+  px(x + 5*s, y - 12*s, s, s, '#ffd700');
+  // Arms
+  px(x + s, y - 14*s, 2*s, 2*s, '#d4a574');
+  px(x + 7*s, y - 14*s, 2*s, 2*s, '#d4a574');
+  px(x, y - 12*s, 2*s, 3*s, '#d4a574');
+  px(x + 8*s, y - 12*s, 2*s, 3*s, '#d4a574');
+  // Knife
+  px(x + 9*s, y - 12*s, s, 3*s, '#4a2a10');
+  px(x + 9*s, y - 16*s, s, 4*s, '#ccc');
+  px(x + 9*s, y - 17*s, s, s, '#eee');
+  px(x + 10*s, y - 16*s, s, 2*s, '#ddd');
+  // Pants
+  px(x + 3*s, y - 8*s, 4*s, 5*s, '#1a1a4a');
+  px(x + 4*s, y - 8*s, 2*s, 5*s, '#222266');
+  // Shoes
+  px(x + 3*s, y - 3*s, 2*s, 2*s, '#222');
+  px(x + 5*s, y - 3*s, 2*s, 2*s, '#222');
+  px(x + 2*s, y - 2*s, s, s, '#222');
+  px(x + 7*s, y - 2*s, s, s, '#222');
+}
+
+// ==================== MAFIOSO TYPE 2: LUPARA ====================
+function drawMafiosoLupara(x, y) {
+  const s = 3;
+  // Fedora
+  px(x + s, y - 21*s, 8*s, s, '#2a2020');
+  px(x + 2*s, y - 23*s, 6*s, 2*s, '#3a2828');
+  px(x + 3*s, y - 24*s, 4*s, s, '#3a2828');
+  // Head
+  px(x + 3*s, y - 20*s, 4*s, 5*s, '#c8956a');
+  px(x + 3*s, y - 19*s, s, 2*s, '#3a2a1a');
+  px(x + 6*s, y - 19*s, s, 2*s, '#3a2a1a');
+  px(x + 4*s, y - 18*s, s, s, '#111');
+  px(x + 6*s, y - 18*s, s, s, '#111');
+  px(x + 4*s, y - 17*s, 3*s, s, '#2a1a0a');
+  px(x + 7*s, y - 18*s, s, 2*s, '#a06050');
+  // Neck
+  px(x + 4*s, y - 15*s, 2*s, s, '#c8956a');
+  // Suit
+  px(x + 2*s, y - 14*s, 6*s, 7*s, '#1a1a1a');
+  px(x + 3*s, y - 14*s, 4*s, 7*s, '#252525');
+  px(x + 4*s, y - 14*s, 2*s, 3*s, '#ddd');
+  px(x + 5*s, y - 14*s, s, 4*s, '#8a0000');
+  // Arms
+  px(x + s, y - 14*s, s, 4*s, '#1a1a1a');
+  px(x + 8*s, y - 14*s, s, 4*s, '#1a1a1a');
+  px(x, y - 10*s, 2*s, 2*s, '#c8956a');
+  px(x + 8*s, y - 10*s, 2*s, 2*s, '#c8956a');
+  // Lupara
+  px(x - s, y - 14*s, s, s, '#555');
+  px(x, y - 13*s, s, s, '#555');
+  px(x + s, y - 12*s, s, s, '#555');
+  px(x + 2*s, y - 11*s, s, s, '#555');
+  px(x - 2*s, y - 15*s, s, s, '#666');
+  px(x - 3*s, y - 16*s, s, s, '#666');
+  px(x - 4*s, y - 17*s, s, s, '#777');
+  px(x - 5*s, y - 18*s, s, s, '#777');
+  px(x - 6*s, y - 19*s, 2*s, s, '#444');
+  px(x + 3*s, y - 10*s, s, 2*s, '#5a3a1a');
+  px(x + 4*s, y - 9*s, s, 2*s, '#5a3a1a');
+  // Pants
+  px(x + 3*s, y - 7*s, 4*s, 4*s, '#1a1a1a');
+  px(x + 4*s, y - 7*s, 2*s, 4*s, '#222');
+  // Shoes
+  px(x + 3*s, y - 3*s, 2*s, 2*s, '#1a1010');
+  px(x + 5*s, y - 3*s, 2*s, 2*s, '#1a1010');
+}
+
+// ==================== MAFIOSO TYPE 3: CON FORNACELLA ====================
+function drawMafiosoFornacella(x, y, fc) {
+  const s = 3;
+  // Beret
+  px(x + 2*s, y - 20*s, 6*s, s, '#444');
+  px(x + 3*s, y - 21*s, 4*s, s, '#555');
+  // Head
+  px(x + 3*s, y - 19*s, 4*s, 4*s, '#d4a574');
+  px(x + 4*s, y - 18*s, s, s, '#111');
+  px(x + 6*s, y - 18*s, s, s, '#111');
+  px(x + 4*s, y - 16*s, 3*s, s, '#aa5040');
+  // Neck
+  px(x + 4*s, y - 15*s, 2*s, s, '#c49564');
+  // Polo
+  px(x + 2*s, y - 14*s, 6*s, 6*s, '#006633');
+  px(x + 3*s, y - 14*s, 4*s, 6*s, '#008844');
+  px(x + 4*s, y - 14*s, 2*s, s, '#004422');
+  // Arms
+  px(x + s, y - 14*s, s, 3*s, '#d4a574');
+  px(x + 8*s, y - 14*s, s, 3*s, '#d4a574');
+  px(x, y - 11*s, 2*s, s, '#d4a574');
+  px(x + 8*s, y - 11*s, 2*s, s, '#d4a574');
+  // Mini fornacella
+  const fx = x + s, fy = y - 27*s;
+  px(fx + s, fy + 5*s, s, 2*s, '#555');
+  px(fx + 4*s, fy + 5*s, s, 2*s, '#555');
+  px(fx, fy + 3*s, 6*s, 2*s, '#777');
+  px(fx + s, fy + 3*s, 4*s, 2*s, '#888');
+  px(fx + s, fy + 2*s, 4*s, s, '#cc3300');
+  const flicker = fc % 10 < 5;
+  px(fx + 2*s, fy + s, 2*s, s, flicker ? '#ff6600' : '#ff4400');
+  px(fx + s, fy, s, s, flicker ? '#ffcc00' : '#ff8800');
+  px(fx + 3*s, fy - s, s, s, flicker ? '#ffcc00' : '#ff9900');
+  // Pants
+  px(x + 3*s, y - 8*s, 4*s, 5*s, '#333');
+  px(x + 4*s, y - 8*s, 2*s, 5*s, '#444');
+  // Shoes
+  px(x + 3*s, y - 3*s, 2*s, 2*s, '#222');
+  px(x + 5*s, y - 3*s, 2*s, 2*s, '#222');
+}
+
+// ==================== FORNACELLA VARIANTS ====================
+function drawFornacella1(x, y, fc) {
+  const s = 3;
+  px(x + s, y - s, s, 2*s, '#555');
+  px(x + 4*s, y, s, s, '#555');
+  px(x + 7*s, y - s, s, 2*s, '#555');
+  px(x, y - 2*s, 9*s, s, '#666');
+  px(x, y - 7*s, 9*s, 5*s, '#777');
+  px(x + s, y - 7*s, 7*s, 5*s, '#888');
+  px(x, y - 7*s, 9*s, s, '#999');
+  for (let i = 1; i < 8; i += 2) px(x + i*s, y - 7*s, s, s, '#aaa');
+  px(x + s, y - 6*s, 7*s, s, '#aa2200');
+  px(x + 2*s, y - 5*s, 5*s, s, '#cc3300');
+  const fl = fc % 12 < 6;
+  px(x + 2*s, y - 8*s, s, s, fl ? '#ff6600' : '#ff4400');
+  px(x + 4*s, y - 9*s, s, s, fl ? '#ffcc00' : '#ff8800');
+  px(x + 6*s, y - 8*s, s, s, fl ? '#ff8800' : '#ff5500');
+  px(x + 3*s, y - 10*s, s, s, fl ? '#ffdd00' : '#ff9900');
+  px(x + 5*s, y - 8*s, 2*s, s, fl ? '#ff5500' : '#ff3300');
+}
+
+function drawFornacella2(x, y, fc) {
+  const s = 3;
+  px(x + s, y, s, 2*s, '#555');
+  px(x + 8*s, y, s, 2*s, '#555');
+  px(x, y - 8*s, 10*s, 7*s, '#666');
+  px(x + s, y - 8*s, 8*s, 7*s, '#777');
+  px(x + 2*s, y - 7*s, 6*s, 5*s, '#888');
+  px(x + s, y - 9*s, 8*s, s, '#999');
+  const fl = fc % 10 < 5;
+  px(x + 2*s, y - 10*s, 2*s, s, fl ? '#ff5500' : '#ff3300');
+  px(x + 5*s, y - 11*s, 2*s, s, fl ? '#ffcc00' : '#ff8800');
+  px(x + 3*s, y - 12*s, s, s, fl ? '#ffdd00' : '#ffaa00');
+  px(x + 6*s, y - 10*s, s, s, fl ? '#ff6600' : '#ff4400');
+  px(x + 4*s, y - 11*s, s, s, fl ? '#ff9900' : '#ff5500');
+  px(x + 2*s, y - 9*s, 6*s, s, '#8a3020');
+  px(x + 3*s, y - 9*s, 2*s, s, '#aa4030');
+  px(x + 6*s, y - 9*s, s, s, '#aa4030');
+}
+
+function drawFornacellaConArrostitori(x, y, fc) {
+  const s = 3;
+  // Person grilling behind
+  const px2 = x + 2*s, py = y - 3*s;
+  ctx.fillStyle = '#d4a574';
+  ctx.fillRect(px2 + 2*s, py - 18*s, 3*s, 3*s);
+  ctx.fillStyle = '#111';
+  ctx.fillRect(px2 + 3*s, py - 17*s, s, s);
+  ctx.fillStyle = '#eee';
+  ctx.fillRect(px2 + s, py - 15*s, 5*s, 6*s);
+  ctx.fillStyle = '#ddd';
+  ctx.fillRect(px2 + 2*s, py - 15*s, 3*s, 6*s);
+  ctx.fillStyle = '#cc0000';
+  ctx.fillRect(px2 + s, py - 13*s, 5*s, s);
+  ctx.fillStyle = '#d4a574';
+  ctx.fillRect(px2, py - 14*s, s, 3*s);
+  ctx.fillRect(px2 + 6*s, py - 14*s, s, 3*s);
+  ctx.fillStyle = '#888';
+  ctx.fillRect(px2 + 6*s, py - 11*s, s, 3*s);
+  ctx.fillRect(px2 + 7*s, py - 10*s, s, 2*s);
+  ctx.fillStyle = '#333';
+  ctx.fillRect(px2 + 2*s, py - 9*s, 2*s, 5*s);
+  ctx.fillRect(px2 + 4*s, py - 9*s, 2*s, 5*s);
+  ctx.fillStyle = '#222';
+  ctx.fillRect(px2 + s, py - 4*s, 2*s, s);
+  ctx.fillRect(px2 + 4*s, py - 4*s, 2*s, s);
+
+  // Fornacella in front
+  ctx.fillStyle = '#555';
+  ctx.fillRect(x + s, y - s, s, 2*s);
+  ctx.fillRect(x + 4*s, y, s, s);
+  ctx.fillRect(x + 7*s, y - s, s, 2*s);
+  ctx.fillStyle = '#777';
+  ctx.fillRect(x, y - 6*s, 9*s, 5*s);
+  ctx.fillStyle = '#888';
+  ctx.fillRect(x + s, y - 6*s, 7*s, 5*s);
+  ctx.fillStyle = '#999';
+  ctx.fillRect(x, y - 6*s, 9*s, s);
+  ctx.fillStyle = '#cc3300';
+  ctx.fillRect(x + s, y - 5*s, 7*s, s);
+  ctx.fillStyle = '#8a2020';
+  ctx.fillRect(x + s, y - 7*s, 2*s, s);
+  ctx.fillStyle = '#9a3030';
+  ctx.fillRect(x + 4*s, y - 7*s, 2*s, s);
+  ctx.fillStyle = '#7a2828';
+  ctx.fillRect(x + 7*s, y - 7*s, s, s);
+  ctx.fillStyle = '#aa4030';
+  ctx.fillRect(x + 2*s, y - 7*s, s, s);
+  ctx.fillRect(x + 5*s, y - 7*s, s, s);
+  const fl = fc % 14;
+  ctx.fillStyle = 'rgba(200,200,200,0.4)';
+  ctx.fillRect(x + 2*s, y - 8*s - (fl % 4) * s, s, s);
+  ctx.fillRect(x + 5*s, y - 9*s - (fl % 3) * s, s, s);
+  ctx.fillRect(x + 3*s, y - 10*s - (fl % 5) * s, s, s);
+  const f2 = fc % 10 < 5;
+  ctx.fillStyle = f2 ? '#ff6600' : '#ff4400';
+  ctx.fillRect(x + 3*s, y - 8*s, s, s);
+  ctx.fillStyle = f2 ? '#ffcc00' : '#ff8800';
+  ctx.fillRect(x + 6*s, y - 8*s, s, s);
+}
+
+// ==================== VIDEO / INTRO ====================
+const introVideo = document.getElementById('introVideo');
+const skipBtn = document.getElementById('skipBtn');
+introVideo.src = 'intro.mp4';
+let introWatched = localStorage.getItem('cavalloIntroWatched') === '1';
+let afterVideoTarget = 'menu'; // 'menu' or 'playing'
+
+const videoBg = document.getElementById('videoBg');
+
+function playIntro(afterDone) {
+  afterVideoTarget = afterDone;
+  videoBg.style.display = 'block';
+  introVideo.style.display = 'block';
+  skipBtn.style.display = 'block';
+  introVideo.currentTime = 0;
+  introVideo.play().catch(() => { endIntro(); });
+}
+
+function endIntro() {
+  introVideo.pause();
+  introVideo.style.display = 'none';
+  skipBtn.style.display = 'none';
+  videoBg.style.display = 'none';
+  if (afterVideoTarget === 'playing') {
+    introWatched = true;
+    localStorage.setItem('cavalloIntroWatched', '1');
+    gameState = 'playing';
+    resetGame();
+  } else {
+    gameState = 'menu';
+  }
+}
+
+introVideo.addEventListener('ended', endIntro);
+introVideo.addEventListener('click', endIntro);
+skipBtn.addEventListener('click', (e) => { e.stopPropagation(); endIntro(); });
+
+document.getElementById('resetBtn').addEventListener('click', () => {
+  localStorage.removeItem('cavalloHighScore');
+  localStorage.removeItem('cavalloIntroWatched');
+  highScore = 0;
+  introWatched = false;
+  gameState = 'menu';
+});
+
+// ==================== GAME STATE ====================
+let GROUND_Y = 540;
+const GRAVITY = 0.55;
+const JUMP_FORCE = -12;
+const HORSE_W = 55;
+const HORSE_H = 78;
+
+let gameState = 'menu'; // 'menu', 'playing', 'gameover'
+let score = 0;
+let highScore = parseInt(localStorage.getItem('cavalloHighScore')) || 0;
+let speed = 3.5;
+let baseSpeed = 3.5;
+let frameCount = 0;
+let animFrame = 0;
+let lastObstacleSpawn = 0;
+let menuHover = ''; // 'play' or 'intro' or ''
+
+const horse = {
+  x: 60,
+  y: GROUND_Y,
+  width: HORSE_W,
+  height: HORSE_H,
+  vy: 0,
+  jumping: false,
+  grounded: true,
+};
+
+let obstacles = [];
+let groundOffset = 0;
+
+// Menu button rects (will be set in drawMenu based on canvas size)
+let btnPlay = { x: 0, y: 0, w: 0, h: 0 };
+let btnIntro = { x: 0, y: 0, w: 0, h: 0 };
+
+// ==================== GAMIFICATION ====================
+let arancini = [];           // collectible arancini on screen
+let aranciniCollected = 0;   // total collected this run
+let streak = 0;              // consecutive obstacles dodged
+let bestStreak = 0;          // best streak this run
+let multiplier = 1;          // score multiplier from streak
+let recordBroken = false;    // has the record been broken this run?
+let recordFlashTimer = 0;    // flash effect timer
+
+// Floating text popups
+let floatingTexts = [];      // { text, x, y, life, color, size }
+
+// Catanese rank titles
+const RANKS = [
+  { score: 0,    title: 'PICCIRIDDU' },
+  { score: 200,  title: 'PICCIOTTO' },
+  { score: 500,  title: 'GUAPPO' },
+  { score: 1000, title: "UOMO D'ONORE" },
+  { score: 2000, title: 'PADRINO' },
+  { score: 4000, title: 'RE DI CATANIA' },
+];
+let currentRank = '';
+let rankUpTimer = 0;
+
+function addFloatingText(text, x, y, color, size) {
+  floatingTexts.push({ text, x, y, life: 60, color: color || '#ffcc00', size: size || 16 });
+}
+
+function getCurrentRank() {
+  let r = RANKS[0].title;
+  for (const rank of RANKS) {
+    if (score >= rank.score) r = rank.title;
+  }
+  return r;
+}
+
+function drawArancino(ax, ay) {
+  const s = 2;
+  // Golden fried rice ball shape
+  ctx.fillStyle = '#d4880a';
+  ctx.fillRect(ax + 2*s, ay, 4*s, s);
+  ctx.fillRect(ax + s, ay + s, 6*s, s);
+  ctx.fillRect(ax, ay + 2*s, 8*s, 4*s);
+  ctx.fillRect(ax + s, ay + 6*s, 6*s, s);
+  ctx.fillRect(ax + 2*s, ay + 7*s, 4*s, s);
+  // Highlight
+  ctx.fillStyle = '#e8a830';
+  ctx.fillRect(ax + 2*s, ay + 2*s, 3*s, 2*s);
+  ctx.fillRect(ax + s, ay + 3*s, 2*s, s);
+  // Bright spot
+  ctx.fillStyle = '#f0c848';
+  ctx.fillRect(ax + 2*s, ay + 2*s, s, s);
+  // Shadow
+  ctx.fillStyle = '#b06808';
+  ctx.fillRect(ax + 4*s, ay + 4*s, 3*s, 2*s);
+  ctx.fillRect(ax + 3*s, ay + 6*s, 3*s, s);
+  // Sparkle
+  if (frameCount % 20 < 10) {
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(ax - s, ay + s, s, s);
+    ctx.fillRect(ax + 7*s, ay - s, s, s);
+  }
+}
+
+// ==================== OBSTACLE SPAWN ====================
+function spawnObstacle() {
+  const rand = Math.random();
+  let type, w, h;
+  if (rand < 0.2) {
+    type = 'fornacella1'; w = 27; h = 36;
+  } else if (rand < 0.35) {
+    type = 'fornacella2'; w = 30; h = 40;
+  } else if (rand < 0.50) {
+    type = 'fornacellaGrill'; w = 36; h = 60;
+  } else if (rand < 0.70) {
+    type = 'mafColtello'; w = 33; h = 63;
+  } else if (rand < 0.85) {
+    type = 'mafLupara'; w = 36; h = 72;
+  } else {
+    type = 'mafFornacella'; w = 33; h = 84;
+  }
+  obstacles.push({ type, x: canvas.width + 20, y: GROUND_Y, width: w, height: h });
+}
+
+// ==================== INPUT ====================
+let jumpPressed = false;
+
+function getCanvasPos(e) {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  const cx = e.clientX || (e.touches && e.touches[0] && e.touches[0].clientX) || 0;
+  const cy = e.clientY || (e.touches && e.touches[0] && e.touches[0].clientY) || 0;
+  return { x: (cx - rect.left) * scaleX, y: (cy - rect.top) * scaleY };
+}
+
+function hitTest(pos, btn) {
+  return pos.x >= btn.x && pos.x <= btn.x + btn.w && pos.y >= btn.y && pos.y <= btn.y + btn.h;
+}
+
+function handleMenuClick(pos) {
+  if (hitTest(pos, btnPlay)) {
+    if (!introWatched) {
+      playIntro('playing');
+    } else {
+      gameState = 'playing';
+      resetGame();
+    }
+  } else if (hitTest(pos, btnIntro)) {
+    playIntro('menu');
+  }
+}
+
+// Home button rect (drawn on canvas during gameplay)
+let btnHome = { x: 0, y: 0, w: 0, h: 0 };
+
+function onJump() {
+  if (gameState === 'gameover') { gameState = 'playing'; resetGame(); return; }
+  if (gameState === 'playing' && horse.grounded) {
+    horse.vy = JUMP_FORCE;
+    horse.jumping = true;
+    horse.grounded = false;
+  }
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.code === 'Space' || e.code === 'ArrowUp') {
+    e.preventDefault();
+    if (gameState === 'menu') {
+      if (!introWatched) { playIntro('playing'); }
+      else { gameState = 'playing'; resetGame(); }
+      return;
+    }
+    if (!jumpPressed) { jumpPressed = true; onJump(); }
+  }
+  if (e.code === 'Escape' && (gameState === 'playing' || gameState === 'gameover')) {
+    gameState = 'menu';
+  }
+});
+document.addEventListener('keyup', (e) => {
+  if (e.code === 'Space' || e.code === 'ArrowUp') jumpPressed = false;
+});
+
+canvas.addEventListener('mousemove', (e) => {
+  if (gameState !== 'menu') { menuHover = ''; return; }
+  const pos = getCanvasPos(e);
+  if (hitTest(pos, btnPlay)) menuHover = 'play';
+  else if (hitTest(pos, btnIntro)) menuHover = 'intro';
+  else menuHover = '';
+});
+
+function handleGameClick(pos) {
+  // Check home button
+  if ((gameState === 'playing' || gameState === 'gameover') && hitTest(pos, btnHome)) {
+    gameState = 'menu';
+    return true;
+  }
+  return false;
+}
+
+canvas.addEventListener('mousedown', (e) => {
+  e.preventDefault();
+  if (gameState === 'menu') { handleMenuClick(getCanvasPos(e)); return; }
+  if (handleGameClick(getCanvasPos(e))) return;
+  onJump();
+});
+canvas.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  if (gameState === 'menu') { handleMenuClick(getCanvasPos(e)); return; }
+  if (handleGameClick(getCanvasPos(e))) return;
+  onJump();
+}, { passive: false });
+
+// ==================== GAME LOGIC ====================
+function resetGame() {
+  score = 0;
+  speed = baseSpeed;
+  horse.y = GROUND_Y;
+  horse.vy = 0;
+  horse.jumping = false;
+  horse.grounded = true;
+  obstacles = [];
+  frameCount = 0;
+  lastObstacleSpawn = 0;
+  // Gamification reset
+  arancini = [];
+  aranciniCollected = 0;
+  streak = 0;
+  bestStreak = 0;
+  multiplier = 1;
+  recordBroken = false;
+  recordFlashTimer = 0;
+  floatingTexts = [];
+  currentRank = RANKS[0].title;
+  rankUpTimer = 0;
+}
+
+function update() {
+  // Animate horse on menu screen too
+  if (gameState === 'menu') {
+    frameCount++;
+    if (frameCount % 8 === 0) animFrame = animFrame === 0 ? 1 : 0;
+    return;
+  }
+  if (gameState !== 'playing') return;
+  frameCount++;
+
+  speed = baseSpeed + Math.floor(score / 200) * 0.3;
+  if (speed > 9) speed = 9;
+
+  horse.vy += GRAVITY;
+  horse.y += horse.vy;
+  if (horse.y >= GROUND_Y) {
+    horse.y = GROUND_Y;
+    horse.vy = 0;
+    horse.jumping = false;
+    horse.grounded = true;
+  }
+
+  if (frameCount % 8 === 0) animFrame = animFrame === 0 ? 1 : 0;
+
+  const minInterval = Math.max(100 - Math.floor(score / 80) * 2, 50);
+  if (frameCount - lastObstacleSpawn > minInterval + Math.random() * 70) {
+    spawnObstacle();
+    lastObstacleSpawn = frameCount;
+  }
+
+  for (let i = obstacles.length - 1; i >= 0; i--) {
+    obstacles[i].x -= speed;
+    if (obstacles[i].x + obstacles[i].width < -50) obstacles.splice(i, 1);
+  }
+
+  groundOffset = (groundOffset + speed) % 24;
+  score += 1;
+
+  // --- Arancino spawn ---
+  if (frameCount % 150 === 0 || (Math.random() < 0.005 && arancini.length < 3)) {
+    const ay = GROUND_Y - 50 - Math.random() * 60;
+    arancini.push({ x: canvas.width + 10, y: ay, w: 16, h: 16 });
+  }
+
+  // --- Arancino movement & collection ---
+  const horseHx = horse.x + 8, horseHy = horse.y - HORSE_H + 14;
+  const horseHw = HORSE_W - 14, horseHh = HORSE_H - 18;
+  for (let i = arancini.length - 1; i >= 0; i--) {
+    arancini[i].x -= speed;
+    if (arancini[i].x < -20) { arancini.splice(i, 1); continue; }
+    const a = arancini[i];
+    if (horseHx < a.x + a.w && horseHx + horseHw > a.x &&
+        horseHy < a.y + a.h && horseHy + horseHh > a.y) {
+      aranciniCollected++;
+      const bonus = 30 * multiplier;
+      score += bonus;
+      addFloatingText('ARANCINU! +' + bonus, a.x, a.y - 10, '#ffaa00', 14);
+      arancini.splice(i, 1);
+    }
+  }
+
+  // --- Near miss tracking & streak ---
+  for (const obs of obstacles) {
+    if (!obs.passed) {
+      const obsRight = obs.x + obs.width;
+      if (obs.x < horse.x + HORSE_W && obsRight > horse.x) {
+        const horseFeet = horse.y - 4;
+        const obstacleTop = obs.y - obs.height + 4;
+        const clearance = obstacleTop - horseFeet;
+        if (clearance >= 0 && (obs.minClearance === undefined || clearance < obs.minClearance)) {
+          obs.minClearance = clearance;
+        }
+      }
+      if (obsRight < horse.x) {
+        obs.passed = true;
+        streak++;
+        if (streak > bestStreak) bestStreak = streak;
+        multiplier = Math.min(1 + Math.floor(streak / 3), 4);
+        if (obs.minClearance !== undefined && obs.minClearance < 22) {
+          const bonus = 50 * multiplier;
+          score += bonus;
+          addFloatingText('MINCHIA CHE CULO! +' + bonus, horse.x, horse.y - HORSE_H - 30, '#ff44ff', 15);
+        }
+        if (streak > 0 && streak % 5 === 0) {
+          addFloatingText('STREAK x' + streak + '!', horse.x + 40, horse.y - HORSE_H - 15, '#00ff88', 14);
+        }
+      }
+    }
+  }
+
+  // --- Record break detection ---
+  if (!recordBroken && highScore > 0 && score > highScore) {
+    recordBroken = true;
+    recordFlashTimer = 90;
+    addFloatingText('NUOVO RECORD!!!', canvas.width / 2 - 60, 60, '#ffd700', 22);
+    addFloatingText('SEI NU GRANDE!', canvas.width / 2 - 50, 85, '#ff6633', 16);
+  }
+  if (recordFlashTimer > 0) recordFlashTimer--;
+
+  // --- Rank tracking ---
+  const newRank = getCurrentRank();
+  if (newRank !== currentRank) {
+    if (currentRank !== '') {
+      rankUpTimer = 80;
+      addFloatingText('RANK UP: ' + newRank, canvas.width / 2 - 70, 120, '#00ffcc', 18);
+    }
+    currentRank = newRank;
+  }
+  if (rankUpTimer > 0) rankUpTimer--;
+
+  // --- Floating texts update ---
+  for (let i = floatingTexts.length - 1; i >= 0; i--) {
+    floatingTexts[i].y -= 0.8;
+    floatingTexts[i].life--;
+    if (floatingTexts[i].life <= 0) floatingTexts.splice(i, 1);
+  }
+
+  // Collision
+  const hx = horse.x + 8;
+  const hy = horse.y - HORSE_H + 14;
+  const hw = HORSE_W - 14;
+  const hh = HORSE_H - 18;
+
+  for (const obs of obstacles) {
+    const ox = obs.x + 4;
+    const oy = obs.y - obs.height + 4;
+    const ow = obs.width - 8;
+    const oh = obs.height - 6;
+    if (hx < ox + ow && hx + hw > ox && hy < oy + oh && hy + hh > oy) {
+      gameState = 'gameover';
+      streak = 0;
+      multiplier = 1;
+      if (score > highScore) {
+        highScore = score;
+        localStorage.setItem('cavalloHighScore', highScore);
+      }
+    }
+  }
+}
+
+// ==================== RENDERING ====================
+function drawBackground() {
+  if (bgLoaded) {
+    // Draw the full image in the top portion, road area is separate below
+    ctx.drawImage(bgImage, 0, 0, canvas.width, bgH);
+  } else {
+    const grad = ctx.createLinearGradient(0, 0, 0, GROUND_Y);
+    grad.addColorStop(0, '#ff6040');
+    grad.addColorStop(0.3, '#ff8855');
+    grad.addColorStop(0.6, '#cc7070');
+    grad.addColorStop(1, '#553344');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, canvas.width, GROUND_Y);
+  }
+}
+
+function drawGround() {
+  // Fill the entire road area with dark basalt base
+  ctx.fillStyle = '#1a1510';
+  ctx.fillRect(0, GROUND_Y, canvas.width, ROAD_HEIGHT);
+
+  // Cobblestone top edge (bright line separating image from road)
+  ctx.fillStyle = '#4a3e30';
+  ctx.fillRect(0, GROUND_Y, canvas.width, 2);
+
+  // Cobblestones row 1
+  for (let x = -groundOffset; x < canvas.width; x += 24) {
+    ctx.fillStyle = '#2a2218';
+    ctx.fillRect(Math.floor(x), GROUND_Y + 3, 10, 8);
+    ctx.fillStyle = '#332a20';
+    ctx.fillRect(Math.floor(x) + 12, GROUND_Y + 3, 10, 8);
+  }
+  // Cobblestones row 2 (offset)
+  for (let x = -groundOffset; x < canvas.width; x += 24) {
+    ctx.fillStyle = '#2e261c';
+    ctx.fillRect(Math.floor(x) + 6, GROUND_Y + 13, 10, 8);
+    ctx.fillStyle = '#262018';
+    ctx.fillRect(Math.floor(x) + 18, GROUND_Y + 13, 10, 8);
+  }
+  // Cobblestones row 3
+  for (let x = -groundOffset; x < canvas.width; x += 24) {
+    ctx.fillStyle = '#241e16';
+    ctx.fillRect(Math.floor(x), GROUND_Y + 23, 10, 8);
+    ctx.fillStyle = '#2c2418';
+    ctx.fillRect(Math.floor(x) + 12, GROUND_Y + 23, 10, 8);
+  }
+  // Mortar/gap lines
+  ctx.fillStyle = '#14100a';
+  for (let x = -groundOffset; x < canvas.width; x += 24) {
+    ctx.fillRect(Math.floor(x) + 10, GROUND_Y + 3, 2, 8);
+    ctx.fillRect(Math.floor(x) + 16, GROUND_Y + 13, 2, 8);
+    ctx.fillRect(Math.floor(x) + 10, GROUND_Y + 23, 2, 8);
+  }
+  ctx.fillStyle = '#14100a';
+  ctx.fillRect(0, GROUND_Y + 11, canvas.width, 2);
+  ctx.fillRect(0, GROUND_Y + 21, canvas.width, 2);
+  ctx.fillRect(0, GROUND_Y + 31, canvas.width, 2);
+
+  // Bottom fill
+  ctx.fillStyle = '#100c08';
+  ctx.fillRect(0, GROUND_Y + 33, canvas.width, ROAD_HEIGHT - 33);
+}
+
+function drawHorseSprite() {
+  const isJumping = horse.jumping || !horse.grounded;
+  drawHorseOutline(horse.x, horse.y, animFrame, isJumping);
+}
+
+function drawObstacles() {
+  for (const obs of obstacles) {
+    switch (obs.type) {
+      case 'fornacella1': drawFornacella1(obs.x, obs.y, frameCount); break;
+      case 'fornacella2': drawFornacella2(obs.x, obs.y, frameCount); break;
+      case 'fornacellaGrill': drawFornacellaConArrostitori(obs.x, obs.y, frameCount); break;
+      case 'mafColtello': drawMafiosoColtello(obs.x, obs.y); break;
+      case 'mafLupara': drawMafiosoLupara(obs.x, obs.y); break;
+      case 'mafFornacella': drawMafiosoFornacella(obs.x, obs.y, frameCount); break;
+    }
+  }
+}
+
+function drawScore() {
+  // Score panel
+  ctx.fillStyle = 'rgba(0,0,0,0.5)';
+  ctx.fillRect(canvas.width - 170, 5, 165, 62);
+  ctx.fillStyle = '#ffcc00';
+  ctx.font = 'bold 16px "Courier New", monospace';
+  ctx.textAlign = 'right';
+  ctx.fillText('HI ' + String(highScore).padStart(5, '0'), canvas.width - 15, 22);
+  ctx.fillStyle = '#fff';
+  ctx.fillText(String(score).padStart(5, '0'), canvas.width - 15, 42);
+  // Rank title
+  ctx.fillStyle = '#00ffcc';
+  ctx.font = 'bold 11px "Courier New", monospace';
+  ctx.fillText(currentRank, canvas.width - 15, 58);
+
+  // Record flash
+  if (recordFlashTimer > 0 && recordFlashTimer % 6 < 3) {
+    ctx.fillStyle = 'rgba(255,215,0,0.15)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+
+  // Left side HUD: streak & arancini
+  ctx.fillStyle = 'rgba(0,0,0,0.5)';
+  ctx.fillRect(50, 5, 130, 45);
+  ctx.textAlign = 'left';
+  if (streak >= 3) {
+    ctx.fillStyle = '#00ff88';
+    ctx.font = 'bold 13px "Courier New", monospace';
+    ctx.fillText('STREAK: ' + streak, 56, 22);
+    ctx.fillStyle = '#ffcc00';
+    ctx.font = 'bold 12px "Courier New", monospace';
+    ctx.fillText('x' + multiplier, 56, 38);
+  }
+  // Arancini count
+  ctx.fillStyle = '#ffaa00';
+  ctx.font = 'bold 12px "Courier New", monospace';
+  ctx.textAlign = 'left';
+  const acText = aranciniCollected + ' arancin' + (aranciniCollected === 1 ? 'u' : 'i');
+  ctx.fillText(acText, streak >= 3 ? 95 : 56, streak >= 3 ? 38 : 22);
+
+  // Home button (top-right, next to score)
+  const hx = canvas.width - 210, hy = 8, hw = 32, hh = 32;
+  btnHome = { x: hx, y: hy, w: hw, h: hh };
+  ctx.fillStyle = 'rgba(0,0,0,0.5)';
+  ctx.fillRect(hx, hy, hw, hh);
+  ctx.strokeStyle = '#ff6633';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(hx, hy, hw, hh);
+  // House icon
+  const cx = hx + hw / 2, cy = hy + hh / 2;
+  ctx.fillStyle = '#ddd';
+  ctx.beginPath();
+  ctx.moveTo(cx, cy - 9);
+  ctx.lineTo(cx + 10, cy);
+  ctx.lineTo(cx + 7, cy);
+  ctx.lineTo(cx + 7, cy + 8);
+  ctx.lineTo(cx - 7, cy + 8);
+  ctx.lineTo(cx - 7, cy);
+  ctx.lineTo(cx - 10, cy);
+  ctx.closePath();
+  ctx.fill();
+  // Door
+  ctx.fillStyle = '#ff6633';
+  ctx.fillRect(cx - 2, cy + 1, 5, 7);
+}
+
+function drawFloatingTexts() {
+  for (const ft of floatingTexts) {
+    const alpha = Math.min(1, ft.life / 20);
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = ft.color;
+    ctx.font = 'bold ' + ft.size + 'px "Courier New", monospace';
+    ctx.textAlign = 'center';
+    ctx.shadowColor = '#000';
+    ctx.shadowBlur = 4;
+    ctx.fillText(ft.text, ft.x, ft.y);
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = 1;
+  }
+}
+
+function drawAranciniSprites() {
+  for (const a of arancini) {
+    drawArancino(a.x, a.y);
+  }
+}
+
+function drawMenuButton(x, y, w, h, text, hovered) {
+  // Button background
+  ctx.fillStyle = hovered ? 'rgba(255,68,0,0.4)' : 'rgba(0,0,0,0.65)';
+  ctx.fillRect(x, y, w, h);
+  // Border
+  ctx.strokeStyle = hovered ? '#ffcc00' : '#ff6633';
+  ctx.lineWidth = hovered ? 3 : 2;
+  ctx.strokeRect(x, y, w, h);
+  // Text
+  ctx.fillStyle = hovered ? '#ffcc00' : '#eee';
+  ctx.font = 'bold 20px "Courier New", monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText(text, x + w / 2, y + h / 2 + 7);
+}
+
+function drawMenu() {
+  drawBackground();
+  drawGround();
+
+  // Horse in center
+  drawHorseOutline(canvas.width / 2 - 25, GROUND_Y, animFrame, false);
+
+  // Title with glow
+  ctx.textAlign = 'center';
+  ctx.shadowColor = '#ff4400';
+  ctx.shadowBlur = 15;
+  ctx.fillStyle = '#ffcc00';
+  ctx.font = 'bold 36px "Courier New", monospace';
+  ctx.fillText('U CAVADDU RUNNER', canvas.width / 2, 55);
+  ctx.shadowBlur = 0;
+
+  ctx.fillStyle = '#ff8844';
+  ctx.font = 'bold 16px "Courier New", monospace';
+  ctx.fillText('~ Catania Edition ~', canvas.width / 2, 78);
+
+  // Buttons
+  const bw = 260, bh = 48, gap = 16;
+  const bx = canvas.width / 2 - bw / 2;
+  const by1 = 100;
+  const by2 = by1 + bh + gap;
+
+  btnPlay = { x: bx, y: by1, w: bw, h: bh };
+  btnIntro = { x: bx, y: by2, w: bw, h: bh };
+
+  drawMenuButton(bx, by1, bw, bh, 'JUCA!', menuHover === 'play');
+  drawMenuButton(bx, by2, bw, bh, 'INTRO & CREDITS', menuHover === 'intro');
+
+  // High score
+  if (highScore > 0) {
+    ctx.fillStyle = '#ffcc00';
+    ctx.font = '14px "Courier New", monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('Record: ' + highScore, canvas.width / 2, by2 + bh + 24);
+  }
+
+  // Hint
+  ctx.fillStyle = '#888';
+  ctx.font = '12px "Courier New", monospace';
+  ctx.fillText('SPAZIO = Juca  |  Sarta cu SPAZIO o tocca', canvas.width / 2, by2 + bh + 46);
+
+  // Credits
+  ctx.fillStyle = '#664433';
+  ctx.font = '10px "Courier New", monospace';
+  ctx.fillText('Realizzato by 2 coglioni durante la festa di Sant\'Agata', canvas.width / 2, canvas.height - 24);
+  ctx.fillStyle = '#ff6633';
+  ctx.font = 'bold 10px "Courier New", monospace';
+  ctx.fillText('@bardimito  @m.molica', canvas.width / 2, canvas.height - 10);
+}
+
+function drawGameOverScreen() {
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  const bx = canvas.width / 2 - 175;
+  const by = 50;
+  ctx.fillStyle = '#1a0a0a';
+  ctx.strokeStyle = '#ff4400';
+  ctx.lineWidth = 3;
+  ctx.fillRect(bx, by, 350, 240);
+  ctx.strokeRect(bx, by, 350, 240);
+
+  ctx.textAlign = 'center';
+  ctx.shadowColor = '#ff0000';
+  ctx.shadowBlur = frameCount % 20 < 10 ? 20 : 5;
+  ctx.fillStyle = '#ff4400';
+  ctx.font = 'bold 32px "Courier New", monospace';
+  ctx.fillText('MINCHIA!', canvas.width / 2, by + 35);
+  ctx.shadowBlur = 0;
+
+  ctx.fillStyle = '#e8c8a8';
+  ctx.font = '14px "Courier New", monospace';
+  ctx.fillText('U cavaddu si stummuliau!', canvas.width / 2, by + 58);
+
+  // Beer spilled
+  ctx.fillStyle = '#daa520';
+  ctx.fillRect(canvas.width / 2 - 8, by + 66, 16, 20);
+  ctx.fillStyle = '#fffff0';
+  ctx.fillRect(canvas.width / 2 - 8, by + 64, 16, 4);
+  ctx.fillStyle = '#e8a020';
+  ctx.fillRect(canvas.width / 2 + 10, by + 76, 8, 4);
+  ctx.fillRect(canvas.width / 2 + 14, by + 80, 6, 3);
+
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 20px "Courier New", monospace';
+  ctx.fillText('Punteggio: ' + score, canvas.width / 2, by + 105);
+
+  ctx.fillStyle = '#ffcc00';
+  ctx.font = '16px "Courier New", monospace';
+  ctx.fillText('Record: ' + highScore, canvas.width / 2, by + 125);
+
+  // Gamification stats
+  ctx.fillStyle = '#00ffcc';
+  ctx.font = 'bold 13px "Courier New", monospace';
+  ctx.fillText('Rank: ' + currentRank, canvas.width / 2, by + 148);
+
+  ctx.fillStyle = '#ffaa00';
+  ctx.font = '12px "Courier New", monospace';
+  const statsText = 'Arancini: ' + aranciniCollected + '  |  Best streak: ' + bestStreak;
+  ctx.fillText(statsText, canvas.width / 2, by + 165);
+
+  if (recordBroken) {
+    ctx.fillStyle = '#ffd700';
+    ctx.font = 'bold 14px "Courier New", monospace';
+    ctx.fillText('NUOVO RECORD!!!', canvas.width / 2, by + 188);
+  }
+
+  ctx.fillStyle = '#aaa';
+  ctx.font = '13px "Courier New", monospace';
+  ctx.fillText('SPAZIO pi ricominciare', canvas.width / 2, by + 218);
+}
+
+function render() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  if (gameState === 'menu') { drawMenu(); return; }
+  drawBackground();
+  drawGround();
+  drawAranciniSprites();
+  drawHorseSprite();
+  drawObstacles();
+  drawScore();
+  drawFloatingTexts();
+  if (gameState === 'gameover') drawGameOverScreen();
+}
+
+function gameLoop() {
+  update();
+  render();
+  requestAnimationFrame(gameLoop);
+}
+gameLoop();
+</script>
+</body>
+</html>
