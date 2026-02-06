@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>U Cavaddu Runner - Catania Edition</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -27,6 +27,10 @@
     cursor: pointer;
     max-width: 100vw;
     max-height: 100vh;
+    touch-action: none;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
   }
   #introVideo {
     position: fixed;
@@ -74,6 +78,9 @@
     font-family: 'Courier New', monospace;
     font-size: 11px;
     cursor: pointer;
+  }
+  @media (max-width: 768px) {
+    #resetBtn { display: none; }
   }
   #resetBtn:hover { color: #ff4400; border-color: #ff4400; }
 </style>
@@ -794,6 +801,10 @@ canvas.addEventListener('touchstart', (e) => {
   if (handleGameClick(getCanvasPos(e))) return;
   onJump();
 }, { passive: false });
+
+// Prevent scroll/zoom on mobile
+document.addEventListener('touchmove', (e) => { e.preventDefault(); }, { passive: false });
+document.addEventListener('gesturestart', (e) => { e.preventDefault(); });
 
 // ==================== GAME LOGIC ====================
 function resetGame() {
