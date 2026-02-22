@@ -1061,6 +1061,17 @@ const RANKS = [
 let currentRank = '';
 let rankUpTimer = 0;
 
+// ==================== SCORE PULSE & RANK CELEBRATION ====================
+let scorePulseTimer = 0;       // counts down from 8 when score pulses
+let lastDisplayedScore = 0;    // tracks last score milestone for 100-pt pulse
+let rankCelebrationTimer = 0;  // counts down from 60 (1 second at 60fps)
+let rankCelebrationTitle = ''; // rank title for the banner
+// 6 celebration particles for rank-up burst effect
+const RANK_PARTICLES = Array.from({ length: 6 }, () => ({
+  x: 0, y: 0, vx: 0, vy: 0, color: '#ffdd33', alpha: 0
+}));
+const RANK_BURST_COLORS = ['#ffdd33', '#00ffcc', '#ff4400', '#ff88cc', '#88ffaa', '#ffaa44'];
+
 // ==================== BOSS: U LIOTRU ====================
 let boss = null;          // oggetto boss attivo (null = nessun boss)
 let bossHits = 0;         // colpi inflitti
@@ -1535,6 +1546,10 @@ function resetGame() {
   floatingTexts = [];
   currentRank = RANKS[0].title;
   rankUpTimer = 0;
+  scorePulseTimer = 0;
+  lastDisplayedScore = 0;
+  rankCelebrationTimer = 0;
+  rankCelebrationTitle = '';
   scoreSubmitted = false;
   // Boss reset
   boss = null;
@@ -1613,6 +1628,14 @@ function update(dt) {
   groundOffset = (groundOffset + speed * dt) % 24;
   ParallaxBg.update(dt, speed);
   score += Math.round(0.7 * dt);
+
+  // --- Score pulse: trigger every 100 points milestone ---
+  const scoreMilestone = Math.floor(score / 100);
+  if (scoreMilestone > Math.floor(lastDisplayedScore / 100)) {
+    scorePulseTimer = 8;
+  }
+  lastDisplayedScore = score;
+  if (scorePulseTimer > 0) scorePulseTimer -= dt;
 
   // --- Horse hitbox (computed once, used for arancini + collision) ---
   const hx = horse.x + 8;
@@ -1707,6 +1730,7 @@ function update(dt) {
       aranciniCollected++;
       const bonus = 30 * multiplier;
       score += bonus;
+      scorePulseTimer = 8; // pulse on arancino pickup (discrete event)
       addFloatingText('ARANCINU! +' + bonus, a.x, a.y - 10, '#ffaa00', 14);
       continue;
     }
@@ -1747,11 +1771,27 @@ function update(dt) {
   if (newRank !== currentRank) {
     if (currentRank !== '') {
       rankUpTimer = 80;
-      addFloatingText('RANK UP: ' + newRank, canvas.width / 2 - 70, 120, '#00ffcc', 18);
+      // Enhanced rank-up celebration
+      rankCelebrationTimer = 60;
+      rankCelebrationTitle = newRank;
+      // Initialize burst particles around the banner area
+      const bannerCX = Math.floor(canvas.width / 2);
+      const bannerCY = 80;
+      for (let pi = 0; pi < RANK_PARTICLES.length; pi++) {
+        const angle = (pi / RANK_PARTICLES.length) * Math.PI * 2;
+        RANK_PARTICLES[pi].x = bannerCX + Math.cos(angle) * 40;
+        RANK_PARTICLES[pi].y = bannerCY;
+        RANK_PARTICLES[pi].vx = Math.cos(angle) * (2 + Math.random() * 2);
+        RANK_PARTICLES[pi].vy = Math.sin(angle) * (2 + Math.random() * 2) - 2;
+        RANK_PARTICLES[pi].color = RANK_BURST_COLORS[pi % RANK_BURST_COLORS.length];
+        RANK_PARTICLES[pi].alpha = 1;
+      }
+      addFloatingText('RANK UP: ' + newRank, canvas.width / 2, 150, '#00ffcc', 16);
     }
     currentRank = newRank;
   }
   if (rankUpTimer > 0) rankUpTimer -= dt;
+  if (rankCelebrationTimer > 0) rankCelebrationTimer -= dt;
 
   // --- Floating texts update (swap-remove) ---
   let fLen = floatingTexts.length;
@@ -1985,7 +2025,14 @@ function drawScore() {
   ctx.lineWidth = 1;
   ctx.strokeRect(canvas.width - 172, 3, 169, 66);
   outText('HI ' + String(highScore).padStart(5, '0'), canvas.width - 15, 22, '#ffdd33', 'bold 16px "Courier New", monospace', 'right');
-  outText(String(score).padStart(5, '0'), canvas.width - 15, 42, '#fff', 'bold 16px "Courier New", monospace', 'right');
+
+  // Score pulse effect: score text briefly grows and turns gold on point gains
+  const pulse = Math.max(0, scorePulseTimer / 8); // 1.0 -> 0.0
+  const scoreSize = Math.floor(16 + 4 * pulse);
+  const scoreColor = pulse > 0
+    ? '#ffee44'  // gold during pulse
+    : '#ffffff'; // white at rest
+  outText(String(score).padStart(5, '0'), canvas.width - 15, 42, scoreColor, 'bold ' + scoreSize + 'px "Courier New", monospace', 'right');
   // Rank title
   outText(currentRank, canvas.width - 15, 58, '#55ffee', 'bold 13px "Courier New", monospace', 'right');
 
@@ -2032,6 +2079,68 @@ function drawScore() {
   // Door
   ctx.fillStyle = '#ff6633';
   ctx.fillRect(cx - 2, cy + 1, 5, 7);
+}
+
+function drawRankCelebration() {
+  if (rankCelebrationTimer <= 0) return;
+
+  const progress = rankCelebrationTimer / 60; // 1.0 -> 0.0
+  const bannerAlpha = Math.min(progress * 2, 1); // fade out in second half
+
+  // Banner slide-in: y goes from -60 to 60 over first 15 frames (~quarter of timer)
+  const slideProgress = Math.min((60 - rankCelebrationTimer) / 15, 1);
+  const bannerY = Math.floor(-60 + slideProgress * 120);
+
+  const bannerW = Math.floor(canvas.width * 0.65);
+  const bannerX = Math.floor((canvas.width - bannerW) / 2);
+  const bannerH = 60;
+
+  ctx.save();
+  ctx.globalAlpha = bannerAlpha;
+
+  // Banner background: dark with gold border
+  ctx.fillStyle = 'rgba(10, 5, 0, 0.88)';
+  ctx.fillRect(bannerX, bannerY, bannerW, bannerH);
+  ctx.strokeStyle = '#ffdd33';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(bannerX, bannerY, bannerW, bannerH);
+
+  // Subtitle: "RANK UP!" in cyan
+  ctx.globalAlpha = bannerAlpha;
+  ctx.font = 'bold 13px "Courier New", monospace';
+  ctx.textAlign = 'center';
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = '#000';
+  ctx.lineJoin = 'round';
+  ctx.strokeText('RANK UP!', Math.floor(canvas.width / 2), bannerY + 18);
+  ctx.fillStyle = '#00ffcc';
+  ctx.fillText('RANK UP!', Math.floor(canvas.width / 2), bannerY + 18);
+
+  // Main title: rank name in gold, bold 26px
+  ctx.font = 'bold 26px "Courier New", monospace';
+  ctx.lineWidth = 4;
+  ctx.strokeStyle = '#000';
+  ctx.strokeText(rankCelebrationTitle, Math.floor(canvas.width / 2), bannerY + 48);
+  ctx.fillStyle = '#ffdd33';
+  ctx.fillText(rankCelebrationTitle, Math.floor(canvas.width / 2), bannerY + 48);
+
+  // Color burst particles (active for first 20 frames of celebration)
+  if (rankCelebrationTimer > 40) {
+    const particleProgress = (rankCelebrationTimer - 40) / 20; // 1.0 -> 0.0 over first 20 frames
+    for (let pi = 0; pi < RANK_PARTICLES.length; pi++) {
+      const p = RANK_PARTICLES[pi];
+      // Move outward
+      p.x += p.vx;
+      p.y += p.vy;
+      p.alpha = particleProgress;
+      ctx.globalAlpha = p.alpha * bannerAlpha;
+      ctx.fillStyle = p.color;
+      ctx.fillRect(Math.floor(p.x), Math.floor(p.y), 3, 3);
+    }
+  }
+
+  ctx.globalAlpha = 1;
+  ctx.restore();
 }
 
 function drawFloatingTexts() {
@@ -2356,6 +2465,7 @@ function render() {
   }
   drawScore();
   drawFloatingTexts();
+  drawRankCelebration();
   if (gameState === 'gameover') drawGameOverScreen();
   // ScreenFade drawn last — overlays everything
   ScreenFade.draw(ctx, canvas.width, canvas.height);
