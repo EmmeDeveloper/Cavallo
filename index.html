@@ -976,8 +976,7 @@ function confirmNickname() {
   if (!introWatched) {
     playIntro('playing');
   } else {
-    gameState = 'playing';
-    resetGame();
+    ScreenFade.start('out-in', 30, () => { gameState = 'playing'; resetGame(); });
   }
 }
 
@@ -1404,8 +1403,7 @@ function handleMenuClick(pos) {
     if (!introWatched) {
       playIntro('playing');
     } else {
-      gameState = 'playing';
-      resetGame();
+      ScreenFade.start('out-in', 30, () => { gameState = 'playing'; resetGame(); });
     }
   } else if (hitTest(pos, btnLeaderboard)) {
     gameState = 'leaderboard';
@@ -1426,7 +1424,11 @@ function handleMenuClick(pos) {
 let btnHome = { x: 0, y: 0, w: 0, h: 0 };
 
 function onJump() {
-  if (gameState === 'gameover') { gameState = 'playing'; resetGame(); return; }
+  if (ScreenFade.active) return;
+  if (gameState === 'gameover') {
+    ScreenFade.start('out-in', 25, () => { gameState = 'playing'; resetGame(); });
+    return;
+  }
   if (gameState === 'playing' && horse.grounded) {
     horse.vy = JUMP_FORCE;
     horse.jumping = true;
@@ -1446,7 +1448,7 @@ document.addEventListener('keydown', (e) => {
         return;
       }
       if (!introWatched) { playIntro('playing'); }
-      else { gameState = 'playing'; resetGame(); }
+      else { ScreenFade.start('out-in', 30, () => { gameState = 'playing'; resetGame(); }); }
       return;
     }
     if (!jumpPressed) { jumpPressed = true; onJump(); }
@@ -1563,6 +1565,7 @@ let animTimer = 0;
 let spawnTimer = 0;
 
 function update(dt) {
+  ScreenFade.update(dt);
   // Animate horse on menu screen too
   if (gameState === 'menu') {
     frameCount++;
@@ -1663,6 +1666,7 @@ function update(dt) {
       const oy = obs.y - obs.height + 4;
       if (hx < ox + obs.width - 8 && hx2 > ox && hy < oy + obs.height - 6 && hy2 > oy) {
         gameState = 'gameover';
+        ScreenFade.start('in', 20);
         streak = 0;
         multiplier = 1;
         if (score > highScore) {
@@ -1849,6 +1853,7 @@ function update(dt) {
       if (gameState === 'playing') {
         if (hx < lv.x + lv.w && hx2 > lv.x && hy < lv.y && hy2 > lv.y - lv.h) {
           gameState = 'gameover';
+          ScreenFade.start('in', 20);
           streak = 0; multiplier = 1;
           if (score > highScore) { highScore = score; localStorage.setItem('cavalloHighScore', highScore); }
           if (playerNickname && !scoreSubmitted) submitScore(playerNickname, score);
@@ -1894,6 +1899,7 @@ function update(dt) {
       // Horse touching boss laterally (game over)
       } else if (overlapFull && hy2 > headTop + headZone) {
         gameState = 'gameover';
+        ScreenFade.start('in', 20);
         streak = 0; multiplier = 1;
         if (score > highScore) { highScore = score; localStorage.setItem('cavalloHighScore', highScore); }
         if (playerNickname && !scoreSubmitted) submitScore(playerNickname, score);
@@ -2324,9 +2330,9 @@ function drawGameOverScreen() {
 
 function render() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  if (gameState === 'menu') { drawMenu(); return; }
-  if (gameState === 'leaderboard') { drawLeaderboard(); return; }
-  if (gameState === 'recipes') { drawRecipes(); return; }
+  if (gameState === 'menu') { drawMenu(); ScreenFade.draw(ctx, canvas.width, canvas.height); return; }
+  if (gameState === 'leaderboard') { drawLeaderboard(); ScreenFade.draw(ctx, canvas.width, canvas.height); return; }
+  if (gameState === 'recipes') { drawRecipes(); ScreenFade.draw(ctx, canvas.width, canvas.height); return; }
   ParallaxBg.draw(ctx, canvas.width, bgH);
   drawGround();
   drawAranciniSprites();
@@ -2351,6 +2357,8 @@ function render() {
   drawScore();
   drawFloatingTexts();
   if (gameState === 'gameover') drawGameOverScreen();
+  // ScreenFade drawn last — overlays everything
+  ScreenFade.draw(ctx, canvas.width, canvas.height);
 }
 
 let lastTime = 0;
