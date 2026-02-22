@@ -20,7 +20,11 @@ Il gioco funziona ed e' completo. Questo milestone porta la qualita' visiva e au
   1. Lo sfondo scorre con 2-3 livelli a velocita' diverse — cielo, edifici e terreno si muovono indipendentemente
   2. Passare da menu a gameplay e da gameplay a game over usa un fade-in/fade-out senza taglio brusco
   3. Il punteggio pulsa visivamente ogni volta che aumenta e il rank-up mostra un effetto celebrativo piu' vistoso rispetto all'attuale
-**Plans**: TBD
+**Plans:** 2 plans
+
+Plans:
+- [ ] 01-01-PLAN.md — Parallax background con 3 livelli procedurali (VIS-01)
+- [ ] 01-02-PLAN.md — Fade transitions tra stati di gioco + score pulse e rank-up celebration (VIS-02, VIS-03)
 
 ### Phase 2: Audio Integration
 **Goal**: Il gioco ha audio completo — effetti sonori per ogni azione, musica di sottofondo e controllo del volume accessibile al giocatore
@@ -49,6 +53,6 @@ Il gioco funziona ed e' completo. Questo milestone porta la qualita' visiva e au
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Screen Effects and Visual Polish | 0/TBD | Not started | - |
+| 1. Screen Effects and Visual Polish | 0/2 | Planning complete | - |
 | 2. Audio Integration | 0/TBD | Not started | - |
 | 3. Mobile Display | 0/TBD | Not started | - |
