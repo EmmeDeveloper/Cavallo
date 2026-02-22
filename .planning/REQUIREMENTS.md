@@ -16,7 +16,7 @@ Requirements for polish release. Each maps to roadmap phases.
 
 ### Visual
 
-- [ ] **VIS-01**: Lo sfondo ha 2-3 livelli parallasse che scorrono a velocita' diverse
+- [x] **VIS-01**: Lo sfondo ha 2-3 livelli parallasse che scorrono a velocita' diverse
 - [ ] **VIS-02**: Le transizioni tra menu, gameplay e game over usano fade-in/fade-out
 - [ ] **VIS-03**: Il punteggio pulsa visivamente quando aumenta e il rank-up ha un effetto celebrativo piu' vistoso
 
@@ -63,7 +63,7 @@ Deferred to future release. Tracked but not in current roadmap.
 | AUD-02 | Phase 2 | Pending |
 | AUD-03 | Phase 2 | Pending |
 | AUD-04 | Phase 2 | Pending |
-| VIS-01 | Phase 1 | Pending |
+| VIS-01 | Phase 1 | Complete |
 | VIS-02 | Phase 1 | Pending |
 | VIS-03 | Phase 1 | Pending |
 | MOB-01 | Phase 3 | Pending |

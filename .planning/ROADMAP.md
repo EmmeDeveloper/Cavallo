@@ -20,7 +20,7 @@ Il gioco funziona ed e' completo. Questo milestone porta la qualita' visiva e au
   1. Lo sfondo scorre con 2-3 livelli a velocita' diverse — cielo, edifici e terreno si muovono indipendentemente
   2. Passare da menu a gameplay e da gameplay a game over usa un fade-in/fade-out senza taglio brusco
   3. Il punteggio pulsa visivamente ogni volta che aumenta e il rank-up mostra un effetto celebrativo piu' vistoso rispetto all'attuale
-**Plans:** 2 plans
+**Plans:** 1/2 plans executed
 
 Plans:
 - [ ] 01-01-PLAN.md — Parallax background con 3 livelli procedurali (VIS-01)
@@ -53,6 +53,6 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Screen Effects and Visual Polish | 0/2 | Planning complete | - |
+| 1. Screen Effects and Visual Polish | 1/2 | In Progress|  |
 | 2. Audio Integration | 0/TBD | Not started | - |
 | 3. Mobile Display | 0/TBD | Not started | - |
