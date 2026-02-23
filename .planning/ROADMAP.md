@@ -49,14 +49,17 @@ Plans:
   1. Su un telefono in portrait il canvas occupa tutta la larghezza dello schermo e il gioco e' giocabile
   2. Ruotando il telefono in landscape il canvas si ridimensiona automaticamente senza ricaricare la pagina
   3. Su qualsiasi dimensione di schermo nessun elemento dell'HUD (punteggio, mute) viene tagliato o sovrapposto
-**Plans**: TBD
+**Plans:** 1 plan
+
+Plans:
+- [ ] 03-01-PLAN.md — CSS dvh fix + resizeCanvas() responsive scaling + mobile verification (MOB-01, MOB-02)
 
 ## Progress
 
-**Execution Order:** 1 → 2 → 3
+**Execution Order:** 1 -> 2 -> 3
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Screen Effects and Visual Polish | 2/2 | Complete | 2026-02-23 |
 | 2. Audio Integration | 2/2 | Complete   | 2026-02-23 |
-| 3. Mobile Display | 0/TBD | Not started | - |
+| 3. Mobile Display | 0/1 | Not started | - |
