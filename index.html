@@ -1014,6 +1014,7 @@ function endIntro() {
     localStorage.setItem('cavalloIntroWatched', '1');
     gameState = 'playing';
     resetGame();
+    AudioManager.playMusic('game');
   } else {
     creditsOverlay.classList.add('show');
   }
@@ -1044,7 +1045,7 @@ function confirmNickname() {
   if (!introWatched) {
     playIntro('playing');
   } else {
-    ScreenFade.start('out-in', 30, () => { gameState = 'playing'; resetGame(); });
+    ScreenFade.start('out-in', 30, () => { gameState = 'playing'; resetGame(); AudioManager.playMusic('game'); });
   }
 }
 
@@ -1482,7 +1483,7 @@ function handleMenuClick(pos) {
     if (!introWatched) {
       playIntro('playing');
     } else {
-      ScreenFade.start('out-in', 30, () => { gameState = 'playing'; resetGame(); });
+      ScreenFade.start('out-in', 30, () => { gameState = 'playing'; resetGame(); AudioManager.playMusic('game'); });
     }
   } else if (hitTest(pos, btnLeaderboard)) {
     gameState = 'leaderboard';
@@ -1501,11 +1502,13 @@ function handleMenuClick(pos) {
 
 // Home button rect (drawn on canvas during gameplay)
 let btnHome = { x: 0, y: 0, w: 0, h: 0 };
+// Mute button rect (drawn on canvas during gameplay, left of home button)
+let btnMute = { x: 0, y: 0, w: 0, h: 0 };
 
 function onJump() {
   if (ScreenFade.active) return;
   if (gameState === 'gameover') {
-    ScreenFade.start('out-in', 25, () => { gameState = 'playing'; resetGame(); });
+    ScreenFade.start('out-in', 25, () => { gameState = 'playing'; resetGame(); AudioManager.playMusic('game'); });
     return;
   }
   if (gameState === 'playing' && horse.grounded) {
@@ -1528,12 +1531,13 @@ document.addEventListener('keydown', (e) => {
         return;
       }
       if (!introWatched) { playIntro('playing'); }
-      else { ScreenFade.start('out-in', 30, () => { gameState = 'playing'; resetGame(); }); }
+      else { ScreenFade.start('out-in', 30, () => { gameState = 'playing'; resetGame(); AudioManager.playMusic('game'); }); }
       return;
     }
     if (!jumpPressed) { jumpPressed = true; onJump(); }
   }
   if (e.code === 'Escape' && (gameState === 'playing' || gameState === 'gameover' || gameState === 'recipes' || gameState === 'leaderboard')) {
+    AudioManager.stopMusic();
     gameState = 'menu';
   }
 });
@@ -1552,8 +1556,14 @@ canvas.addEventListener('mousemove', (e) => {
 });
 
 function handleGameClick(pos) {
+  // Check mute button (left of home button)
+  if ((gameState === 'playing' || gameState === 'gameover') && hitTest(pos, btnMute)) {
+    AudioManager.setMute(!AudioManager.isMuted());
+    return true;
+  }
   // Check home button
   if ((gameState === 'playing' || gameState === 'gameover') && hitTest(pos, btnHome)) {
+    AudioManager.stopMusic();
     gameState = 'menu';
     return true;
   }
@@ -1758,6 +1768,7 @@ function update(dt) {
       const oy = obs.y - obs.height + 4;
       if (hx < ox + obs.width - 8 && hx2 > ox && hy < oy + obs.height - 6 && hy2 > oy) {
         gameState = 'gameover';
+        AudioManager.stopMusic();
         AudioManager.play('gameOver');
         ScreenFade.start('in', 20);
         streak = 0;
@@ -1898,6 +1909,7 @@ function update(dt) {
     bossFlashTimer = 0;
     bossIntroTimer = 80;
     addFloatingText('U LIOTRU!!!', canvas.width / 2, canvas.height / 2 - 40, '#ff4400', 32);
+    AudioManager.playMusic('boss');
   }
 
   // --- BOSS UPDATE ---
@@ -1964,6 +1976,7 @@ function update(dt) {
       if (gameState === 'playing') {
         if (hx < lv.x + lv.w && hx2 > lv.x && hy < lv.y && hy2 > lv.y - lv.h) {
           gameState = 'gameover';
+          AudioManager.stopMusic();
           AudioManager.play('gameOver');
           ScreenFade.start('in', 20);
           streak = 0; multiplier = 1;
@@ -2000,6 +2013,7 @@ function update(dt) {
           boss = null;
           bossDefeated++;
           AudioManager.play('bossDefeated');
+          AudioManager.playMusic('game');
           bossLavas = [];
           score += 1000;
           postBossGracePeriod = 500; // ~8 seconds of easier spawns
@@ -2013,6 +2027,7 @@ function update(dt) {
       // Horse touching boss laterally (game over)
       } else if (overlapFull && hy2 > headTop + headZone) {
         gameState = 'gameover';
+        AudioManager.stopMusic();
         AudioManager.play('gameOver');
         ScreenFade.start('in', 20);
         streak = 0; multiplier = 1;
@@ -2154,6 +2169,19 @@ function drawScore() {
   // Door
   ctx.fillStyle = '#ff6633';
   ctx.fillRect(cx - 2, cy + 1, 5, 7);
+
+  // Mute button (left of home button)
+  const mx = hx - 42, my = 8, mw = 32, mh = 32;
+  btnMute = { x: mx, y: my, w: mw, h: mh };
+  ctx.fillStyle = 'rgba(0,0,0,0.5)';
+  ctx.fillRect(mx, my, mw, mh);
+  ctx.strokeStyle = AudioManager.isMuted() ? '#555' : '#ff6633';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(mx, my, mw, mh);
+  outText(AudioManager.isMuted() ? 'M' : 'S',
+    mx + mw / 2, my + mh / 2 + 5,
+    AudioManager.isMuted() ? '#666' : '#ddd',
+    'bold 14px "Courier New", monospace', 'center');
 }
 
 function drawRankCelebration() {
