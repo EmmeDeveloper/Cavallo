@@ -542,6 +542,43 @@ canvas.width = 960;
 canvas.height = 540 + ROAD_HEIGHT;
 // ParallaxBg.init(canvas.width, 540); // PARALLAX DISABLED — Phase 04
 
+// ==================== SPRITE PRELOADER ====================
+const sprites = {};
+let spritesLoaded = 0;
+const SPRITE_TOTAL = 14;
+
+function loadSprite(key, src) {
+  sprites[key] = new Image();
+  sprites[key].onload = () => { spritesLoaded++; };
+  sprites[key].onerror = () => { console.warn('Sprite failed:', src); spritesLoaded++; };
+  sprites[key].src = src;
+}
+
+loadSprite('horse_run1',       'sprites/horse_run1.png');
+loadSprite('horse_run2',       'sprites/horse_run2.png');
+loadSprite('horse_jump',       'sprites/horse_jump.png');
+loadSprite('boss_idle',        'sprites/boss_idle.png');
+loadSprite('boss_charge',      'sprites/boss_charge.png');
+loadSprite('boss_flash',       'sprites/boss_flash.png');
+loadSprite('arancino',         'sprites/arancino.png');
+loadSprite('fornacella1',      'sprites/fornacella1.png');
+loadSprite('fornacella2',      'sprites/fornacella2.png');
+loadSprite('fornacella_grill', 'sprites/fornacella_grill.png');
+loadSprite('maf_coltello',     'sprites/maf_coltello.png');
+loadSprite('maf_lupara',       'sprites/maf_lupara.png');
+loadSprite('maf_fornacella',   'sprites/maf_fornacella.png');
+loadSprite('lava',             'sprites/lava.png');
+
+// ==================== SPRITE DRAW HELPER ====================
+// Bottom-anchor: feetX/feetY = center-bottom of sprite (feet on ground)
+function drawSprite(img, feetX, feetY, scale) {
+  if (!img || !img.complete || img.naturalWidth === 0) return;
+  ctx.imageSmoothingEnabled = false;
+  const w = img.width * scale;
+  const h = img.height * scale;
+  ctx.drawImage(img, Math.floor(feetX - w / 2), Math.floor(feetY - h), w, h);
+}
+
 // ==================== RESPONSIVE CANVAS SCALING ====================
 function resizeCanvas() {
   const nativeW = canvas.width  || 960;
@@ -2115,18 +2152,37 @@ function drawGround() {
 }
 
 function drawHorseSprite() {
-  const isJumping = horse.jumping || !horse.grounded;
-  drawHorseOutline(horse.x, horse.y, animFrame, isJumping);
+  // Phase 04-02: sprite-based rendering
+  const img = (horse.jumping || !horse.grounded)
+    ? sprites.horse_jump
+    : (animFrame === 0 ? sprites.horse_run1 : sprites.horse_run2);
+  // horse.x is left edge, horse.y is feet (bottom). Center horizontally.
+  drawSprite(img, horse.x + HORSE_W / 2, horse.y, 3); // 64*3 = 192px
+
+  // OLD code-drawn horse (commented out — Phase 04-02):
+  // const isJumping = horse.jumping || !horse.grounded;
+  // drawHorseOutline(horse.x, horse.y, animFrame, isJumping);
 }
 
 // Obstacle draw lookup (avoid switch per frame)
-const OBS_DRAW = {
-  'fornacella1': (x, y) => drawFornacella1(x, y, frameCount),
-  'fornacella2': (x, y) => drawFornacella2(x, y, frameCount),
-  'fornacellaGrill': (x, y) => drawFornacellaConArrostitori(x, y, frameCount),
-  'mafColtello': drawMafiosoColtello,
-  'mafLupara': drawMafiosoLupara,
-  'mafFornacella': (x, y) => drawMafiosoFornacella(x, y, frameCount),
+// OLD code-drawn lookup (commented out — Phase 04-02):
+// const OBS_DRAW = {
+//   'fornacella1': (x, y) => drawFornacella1(x, y, frameCount),
+//   'fornacella2': (x, y) => drawFornacella2(x, y, frameCount),
+//   'fornacellaGrill': (x, y) => drawFornacellaConArrostitori(x, y, frameCount),
+//   'mafColtello': drawMafiosoColtello,
+//   'mafLupara': drawMafiosoLupara,
+//   'mafFornacella': (x, y) => drawMafiosoFornacella(x, y, frameCount),
+// };
+
+// Phase 04-02: sprite-based obstacle draw map
+const spriteMap = {
+  'fornacella1':     () => sprites.fornacella1,
+  'fornacella2':     () => sprites.fornacella2,
+  'fornacellaGrill': () => sprites.fornacella_grill,
+  'mafColtello':     () => sprites.maf_coltello,
+  'mafLupara':       () => sprites.maf_lupara,
+  'mafFornacella':   () => sprites.maf_fornacella,
 };
 
 function drawObstacles() {
@@ -2134,7 +2190,11 @@ function drawObstacles() {
   for (let i = 0, len = obstacles.length; i < len; i++) {
     const obs = obstacles[i];
     if (obs.x > cw + 10 || obs.x + obs.width < -10) continue;
-    OBS_DRAW[obs.type](obs.x, obs.y);
+    // Phase 04-02: drawSprite with feet at obs.y (bottom of hitbox), centered on hitbox
+    const getSpr = spriteMap[obs.type];
+    if (getSpr) {
+      drawSprite(getSpr(), obs.x + obs.width / 2, obs.y, 3);
+    }
   }
 }
 
@@ -2296,7 +2356,9 @@ function drawFloatingTexts() {
 
 function drawAranciniSprites() {
   for (const a of arancini) {
-    drawArancino(a.x, a.y);
+    // Phase 04-02: sprite-based arancino
+    drawSprite(sprites.arancino, a.x + a.w / 2, a.y + a.h, 2);
+    // OLD code-drawn: drawArancino(a.x, a.y);
   }
 }
 
@@ -2316,8 +2378,10 @@ function drawMenu() {
   drawBackground(); // PARALLAX DISABLED — Phase 04: was ParallaxBg.draw(ctx, canvas.width, bgH)
   drawGround();
 
-  // Horse in center
-  drawHorseOutline(canvas.width / 2 - 25, GROUND_Y, animFrame, false);
+  // Horse in center (Phase 04-02: sprite-based)
+  const menuHorseImg = animFrame === 0 ? sprites.horse_run1 : sprites.horse_run2;
+  drawSprite(menuHorseImg, canvas.width / 2, GROUND_Y, 3);
+  // OLD code-drawn: drawHorseOutline(canvas.width / 2 - 25, GROUND_Y, animFrame, false);
 
   // Title with glow
   ctx.textAlign = 'center';
@@ -2573,6 +2637,16 @@ function drawGameOverScreen() {
 
 function render() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+  // Phase 04-02: show loading screen until all sprites are ready
+  if (spritesLoaded < SPRITE_TOTAL) {
+    ctx.fillStyle = '#1a0a0a';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#ffcc00';
+    ctx.font = 'bold 24px "Courier New", monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('Caricamento...', canvas.width / 2, canvas.height / 2);
+    return;
+  }
   if (gameState === 'menu') { drawMenu(); ScreenFade.draw(ctx, canvas.width, canvas.height); return; }
   if (gameState === 'leaderboard') { drawLeaderboard(); ScreenFade.draw(ctx, canvas.width, canvas.height); return; }
   if (gameState === 'recipes') { drawRecipes(); ScreenFade.draw(ctx, canvas.width, canvas.height); return; }
@@ -2583,9 +2657,32 @@ function render() {
   drawObstacles();
   // --- Boss rendering ---
   if (boss) {
-    drawLiotru(boss.x, boss.y, animFrame);
+    // Phase 04-02: sprite-based boss drawing
+    // drawLiotru(boss.x, boss.y, animFrame); // OLD code-drawn (commented out)
+    (function drawBossSprite() {
+      let img;
+      if (bossFlashTimer > 0) {
+        img = sprites.boss_flash;
+      } else {
+        img = (animFrame === 0) ? sprites.boss_idle : sprites.boss_charge;
+      }
+      drawSprite(img, boss.x + boss.w / 2, boss.y, 4); // boss is bigger — scale 4x
+      // HP bar above boss (drawn after sprite so it's on top)
+      const barX = boss.x + 4;
+      const barY = boss.y - boss.h - 20;
+      for (let i = 0; i < bossHP; i++) {
+        const filled = i < (bossHP - bossHits);
+        ctx.fillStyle = filled ? '#ff2222' : '#444444';
+        ctx.fillRect(barX + i * 36, barY, 30, 12);
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(barX + i * 36, barY, 30, 12);
+      }
+    })();
     for (let i = 0; i < bossLavas.length; i++) {
-      drawLava(bossLavas[i].x, bossLavas[i].y);
+      // Phase 04-02: sprite-based lava
+      // drawLava(bossLavas[i].x, bossLavas[i].y); // OLD code-drawn
+      drawSprite(sprites.lava, bossLavas[i].x + bossLavas[i].w / 2, bossLavas[i].y, 2);
     }
     // Boss intro text with glow
     if (bossIntroTimer > 0) {
