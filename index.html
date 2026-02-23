@@ -12,7 +12,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
+    height: 100dvh;
     overflow: hidden;
     font-family: 'Courier New', monospace;
   }
@@ -26,8 +26,7 @@
     image-rendering: pixelated;
     image-rendering: crisp-edges;
     cursor: pointer;
-    max-width: 100vw;
-    max-height: 100vh;
+    display: block;
     touch-action: none;
     -webkit-touch-callout: none;
     -webkit-user-select: none;
@@ -534,6 +533,7 @@ bgImage.onload = () => {
   horse.y = GROUND_Y;
   bgLoaded = true;
   ParallaxBg.init(canvas.width, bgH);
+  resizeCanvas();
 };
 
 // Default canvas before image loads
@@ -541,6 +541,20 @@ canvas.width = 960;
 canvas.height = 540 + ROAD_HEIGHT;
 // Init parallax with default dimensions (will be re-inited on bgImage.onload)
 ParallaxBg.init(canvas.width, 540);
+
+// ==================== RESPONSIVE CANVAS SCALING ====================
+function resizeCanvas() {
+  const nativeW = canvas.width  || 960;
+  const nativeH = canvas.height || 590;
+  const scale   = Math.min(window.innerWidth / nativeW, window.innerHeight / nativeH);
+  canvas.style.width  = Math.floor(nativeW * scale) + 'px';
+  canvas.style.height = Math.floor(nativeH * scale) + 'px';
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+if (screen.orientation) {
+  screen.orientation.addEventListener('change', resizeCanvas);
+}
 
 // ==================== PIXEL HELPER ====================
 function px(x, y, w, h, color) {
