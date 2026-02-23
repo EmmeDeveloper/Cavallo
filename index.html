@@ -2151,10 +2151,16 @@ function drawGround() {
 function drawHorseSprite() {
   const isJumping = horse.jumping || !horse.grounded;
   const img = isJumping ? sprites.horse_jump : sprites.horse_run1;
-  // horse.y is feet position; sprite top-left = (horse.x, horse.y - HORSE_H)
-  drawSprite(img, horse.x, horse.y - HORSE_H, HORSE_W, HORSE_H);
-  // Fallback to code-drawn if sprite not yet loaded
-  if (!img || !img.complete || img.naturalWidth === 0) {
+  if (img && img.complete && img.naturalWidth > 0) {
+    // PixelLab sprites are 48x48 with ~30% transparent padding.
+    // Render at 2x native (96x96) centered on hitbox, shifted down so feet touch ground.
+    ctx.imageSmoothingEnabled = false;
+    const renderW = 96, renderH = 96;
+    const cx = horse.x + HORSE_W / 2; // center of hitbox
+    const drawX = cx - renderW / 2;
+    const drawY = horse.y - renderH + 18; // +18 shifts down to ground feet
+    ctx.drawImage(img, Math.floor(drawX), Math.floor(drawY), renderW, renderH);
+  } else {
     drawHorseOutline(horse.x, horse.y, animFrame, isJumping);
   }
 }
@@ -2412,12 +2418,12 @@ function drawMenu() {
   drawBackground(); // PARALLAX DISABLED — Phase 04: was ParallaxBg.draw(ctx, canvas.width, bgH)
   drawGround();
 
-  // Horse in center (slightly larger for menu emphasis)
-  const mw = Math.floor(HORSE_W * 1.5);
-  const mh = Math.floor(HORSE_H * 1.5);
+  // Horse in center (PixelLab 48x48 rendered at 3x = 144x144 for menu emphasis)
   const mspr = sprites.horse_run1;
   if (mspr && mspr.complete && mspr.naturalWidth > 0) {
-    drawSprite(mspr, canvas.width / 2 - mw / 2, GROUND_Y - mh, mw, mh);
+    ctx.imageSmoothingEnabled = false;
+    const mRender = 144;
+    ctx.drawImage(mspr, Math.floor(canvas.width / 2 - mRender / 2), Math.floor(GROUND_Y - mRender + 24), mRender, mRender);
   } else {
     drawHorseOutline(canvas.width / 2 - 25, GROUND_Y, animFrame, false); // fallback
   }
