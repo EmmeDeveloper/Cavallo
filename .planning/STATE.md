@@ -11,10 +11,10 @@ See: .planning/PROJECT.md (updated 2026-02-22)
 
 Phase: 2 of 3 (Audio Integration)
 Plan: 2 of 2 in current phase
-Status: In progress (awaiting human-verify checkpoint for 02-02)
-Last activity: 2026-02-23 — Completed plan 02-02: background music + mute button HUD (checkpoint pending)
+Status: Phase complete — Phase 02 audio integration fully verified and committed
+Last activity: 2026-02-23 — Completed plan 02-02: background music + mute button HUD (human-verify approved)
 
-Progress: [█████░░░░░] 50%
+Progress: [██████░░░░] 67%
 
 ## Performance Metrics
 
@@ -68,11 +68,11 @@ None yet.
 ### Blockers/Concerns
 
 - SFX files sono WAV sintetizzati labellati .ogg/.mp3 — possono essere sostituiti con file CC0 reali senza modifiche al codice
-- Music files creati (music_game.ogg, music_boss.ogg) — WAV sintetizzati come SFX; pronti per verifica umana
+- Music files (music_game.ogg, music_boss.ogg) — WAV sintetizzati, verificati e approvati dall'utente
 - Mobile testing: i pitfall iOS (autoplay audio, screen shake viewport) vanno verificati su dispositivo fisico dopo Phase 2
 
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: Checkpoint 02-02 Task 2 human-verify (all code complete, music files created, mute button wired)
+Stopped at: Completed 02-02-PLAN.md — Phase 02 audio integration fully complete. Ready for Phase 03.
 Resume file: None

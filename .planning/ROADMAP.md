@@ -7,7 +7,7 @@ Il gioco funziona ed e' completo. Questo milestone porta la qualita' visiva e au
 ## Phases
 
 - [x] **Phase 1: Screen Effects and Visual Polish** - Parallasse, transizioni fade, feedback punteggio
-- [ ] **Phase 2: Audio Integration** - SFX, musica in loop, mute toggle, effetto sonoro boss
+- [x] **Phase 2: Audio Integration** - SFX, musica in loop, mute toggle, effetto sonoro boss (completed 2026-02-23)
 - [ ] **Phase 3: Mobile Display** - Canvas responsive, fullscreen portrait e landscape
 
 ## Phase Details
@@ -35,11 +35,11 @@ Plans:
   2. La musica di sottofondo suona in loop durante il gameplay e non si sente silenzio tra i loop
   3. Il pulsante mute nel HUD attiva e disattiva tutto l'audio e la preferenza viene ricordata al riavvio
   4. Quando appare U Liotru, la musica o il sound design cambia in modo percettibile per segnalare l'intensita' del momento
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 
 Plans:
-- [ ] 02-01-PLAN.md — AudioManager IIFE + Howler.js CDN + 6 SFX files + hook-in a 7 eventi di gioco (AUD-01)
-- [ ] 02-02-PLAN.md — Musica di sottofondo in loop + boss music swap + mute button HUD con localStorage (AUD-02, AUD-03, AUD-04)
+- [x] 02-01-PLAN.md — AudioManager IIFE + Howler.js CDN + 6 SFX files + hook-in a 7 eventi di gioco (AUD-01)
+- [x] 02-02-PLAN.md — Musica di sottofondo in loop + boss music swap + mute button HUD con localStorage (AUD-02, AUD-03, AUD-04)
 
 ### Phase 3: Mobile Display
 **Goal**: Il gioco riempie lo schermo su qualsiasi dispositivo, in portrait e landscape, senza bande nere o elementi tagliati
@@ -58,5 +58,5 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Screen Effects and Visual Polish | 2/2 | Complete | 2026-02-23 |
-| 2. Audio Integration | 1/2 | In Progress|  |
+| 2. Audio Integration | 2/2 | Complete   | 2026-02-23 |
 | 3. Mobile Display | 0/TBD | Not started | - |
