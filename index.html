@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>U Cavaddu Runner - Catania Edition</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js"></script>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -412,6 +413,73 @@ const ScreenFade = (function() {
     update,
     draw
   };
+})();
+</script>
+<script>
+// ==================== AUDIO MANAGER ====================
+// Wraps Howler.js for SFX and music playback.
+// Exposes: init, play, playMusic, stopMusic, setMute, isMuted
+const AudioManager = (function() {
+  let musicHowl = null;
+  let muted = false;
+  let initialized = false;
+
+  const SFX = {
+    jump:         null,
+    collect:      null,
+    collision:    null,
+    bossHit:      null,
+    bossDefeated: null,
+    gameOver:     null,
+  };
+
+  function init() {
+    if (initialized) return;
+    initialized = true;
+
+    muted = localStorage.getItem('cavalloMuted') === '1';
+    Howler.mute(muted);
+
+    const files = {
+      jump:         ['audio/jump.ogg',         'audio/jump.mp3'],
+      collect:      ['audio/collect.ogg',       'audio/collect.mp3'],
+      collision:    ['audio/collision.ogg',     'audio/collision.mp3'],
+      bossHit:      ['audio/boss_hit.ogg',      'audio/boss_hit.mp3'],
+      bossDefeated: ['audio/boss_defeated.ogg', 'audio/boss_defeated.mp3'],
+      gameOver:     ['audio/game_over.ogg',     'audio/game_over.mp3'],
+    };
+
+    for (const [name, src] of Object.entries(files)) {
+      SFX[name] = new Howl({ src, volume: 0.6, preload: true });
+    }
+  }
+
+  function play(name) {
+    if (SFX[name]) SFX[name].play();
+  }
+
+  function playMusic(track) {
+    if (musicHowl) { musicHowl.stop(); musicHowl.unload(); musicHowl = null; }
+    const src = track === 'boss'
+      ? ['audio/music_boss.ogg', 'audio/music_boss.mp3']
+      : ['audio/music_game.ogg', 'audio/music_game.mp3'];
+    musicHowl = new Howl({ src, loop: true, volume: 0.4, html5: false });
+    musicHowl.play();
+  }
+
+  function stopMusic() {
+    if (musicHowl) { musicHowl.stop(); }
+  }
+
+  function setMute(val) {
+    muted = !!val;
+    Howler.mute(muted);
+    localStorage.setItem('cavalloMuted', muted ? '1' : '0');
+  }
+
+  function isMuted() { return muted; }
+
+  return { init, play, playMusic, stopMusic, setMute, isMuted };
 })();
 </script>
 <script>
@@ -1444,6 +1512,7 @@ function onJump() {
     horse.vy = JUMP_FORCE;
     horse.jumping = true;
     horse.grounded = false;
+    AudioManager.play('jump');
   }
 }
 
@@ -1689,6 +1758,7 @@ function update(dt) {
       const oy = obs.y - obs.height + 4;
       if (hx < ox + obs.width - 8 && hx2 > ox && hy < oy + obs.height - 6 && hy2 > oy) {
         gameState = 'gameover';
+        AudioManager.play('gameOver');
         ScreenFade.start('in', 20);
         streak = 0;
         multiplier = 1;
@@ -1728,6 +1798,7 @@ function update(dt) {
     if (a.x < -20) continue;
     if (hx < a.x + a.w && hx2 > a.x && hy < a.y + a.h && hy2 > a.y) {
       aranciniCollected++;
+      AudioManager.play('collect');
       const bonus = 30 * multiplier;
       score += bonus;
       scorePulseTimer = 8; // pulse on arancino pickup (discrete event)
@@ -1893,6 +1964,7 @@ function update(dt) {
       if (gameState === 'playing') {
         if (hx < lv.x + lv.w && hx2 > lv.x && hy < lv.y && hy2 > lv.y - lv.h) {
           gameState = 'gameover';
+          AudioManager.play('gameOver');
           ScreenFade.start('in', 20);
           streak = 0; multiplier = 1;
           if (score > highScore) { highScore = score; localStorage.setItem('cavalloHighScore', highScore); }
@@ -1917,6 +1989,7 @@ function update(dt) {
       if (horse.vy > 0 && overlapH &&
           hy2 >= headTop && hy2 <= headTop + headZone) {
         bossHits++;
+        AudioManager.play('bossHit');
         horse.vy = JUMP_FORCE * 0.7;
         horse.jumping = true;
         horse.grounded = false;
@@ -1926,6 +1999,7 @@ function update(dt) {
         if (bossHits >= bossHP) {
           boss = null;
           bossDefeated++;
+          AudioManager.play('bossDefeated');
           bossLavas = [];
           score += 1000;
           postBossGracePeriod = 500; // ~8 seconds of easier spawns
@@ -1939,6 +2013,7 @@ function update(dt) {
       // Horse touching boss laterally (game over)
       } else if (overlapFull && hy2 > headTop + headZone) {
         gameState = 'gameover';
+        AudioManager.play('gameOver');
         ScreenFade.start('in', 20);
         streak = 0; multiplier = 1;
         if (score > highScore) { highScore = score; localStorage.setItem('cavalloHighScore', highScore); }
@@ -2482,6 +2557,7 @@ function gameLoop(timestamp) {
   render();
   requestAnimationFrame(gameLoop);
 }
+AudioManager.init();
 fetchLeaderboard();
 requestAnimationFrame(gameLoop);
 </script>
