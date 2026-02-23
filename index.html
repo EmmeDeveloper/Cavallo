@@ -8,13 +8,22 @@
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
-    background: #1a0a0a;
+    background: #1a0a0a url('bg.webp') center/cover no-repeat;
     display: flex;
     justify-content: center;
     align-items: center;
     height: 100dvh;
     overflow: hidden;
     font-family: 'Courier New', monospace;
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: url('bg.webp') center/cover no-repeat;
+    filter: blur(24px) brightness(0.35);
+    z-index: -1;
+    transform: scale(1.05);
   }
   #wrap {
     position: relative;
@@ -67,22 +76,10 @@
     cursor: pointer;
   }
   #skipBtn:hover { background: rgba(255,68,0,0.5); }
+  /* #resetBtn hidden — Phase 04: dev reset moved to 3-second long-press on menu canvas */
   #resetBtn {
-    position: fixed;
-    top: 8px; left: 8px;
-    z-index: 50;
-    background: rgba(0,0,0,0.5);
-    color: #888;
-    border: 1px solid #444;
-    padding: 4px 10px;
-    font-family: 'Courier New', monospace;
-    font-size: 11px;
-    cursor: pointer;
+    display: none;
   }
-  @media (max-width: 768px) {
-    #resetBtn { display: none; }
-  }
-  #resetBtn:hover { color: #ff4400; border-color: #ff4400; }
   #creditsOverlay {
     position: fixed;
     top: 0; left: 0;
@@ -207,6 +204,9 @@
 </div>
 <button id="resetBtn">DEV: Reset</button>
 <script>
+// PARALLAX DISABLED — Phase 04: restored static bg.webp per user decision
+/* eslint-disable */
+/*
 // ==================== PARALLAX BACKGROUND ====================
 // Self-contained subsystem. Exposes ParallaxBg.init(), .update(dt, speed), .draw(ctx, canvasWidth, bgHeight)
 const ParallaxBg = (function() {
@@ -332,6 +332,7 @@ const ParallaxBg = (function() {
 
   return { init, update, draw };
 })();
+*/
 </script>
 <script>
 // ==================== SCREEN FADE ====================
@@ -532,15 +533,14 @@ bgImage.onload = () => {
   GROUND_Y = bgH; // ground line sits right at the bottom of the image
   horse.y = GROUND_Y;
   bgLoaded = true;
-  ParallaxBg.init(canvas.width, bgH);
+  // ParallaxBg.init(canvas.width, bgH); // PARALLAX DISABLED — Phase 04
   resizeCanvas();
 };
 
 // Default canvas before image loads
 canvas.width = 960;
 canvas.height = 540 + ROAD_HEIGHT;
-// Init parallax with default dimensions (will be re-inited on bgImage.onload)
-ParallaxBg.init(canvas.width, 540);
+// ParallaxBg.init(canvas.width, 540); // PARALLAX DISABLED — Phase 04
 
 // ==================== RESPONSIVE CANVAS SCALING ====================
 function resizeCanvas() {
@@ -1091,17 +1091,34 @@ introVideo.addEventListener('ended', endIntro);
 introVideo.addEventListener('click', endIntro);
 skipBtn.addEventListener('click', (e) => { e.stopPropagation(); endIntro(); });
 
-document.getElementById('resetBtn').addEventListener('click', () => {
+// PHASE 04: #resetBtn hidden — dev reset now via 3-second long-press on menu canvas
+// document.getElementById('resetBtn').addEventListener('click', () => { ... });
+
+// Dev reset function — all localStorage cleared + page reload
+function devReset() {
   localStorage.removeItem('cavalloHighScore');
   localStorage.removeItem('cavalloIntroWatched');
   localStorage.removeItem('cavalloRecipes');
   localStorage.removeItem('cavalloNickname');
-  highScore = 0;
-  introWatched = false;
-  unlockedRecipes = [];
-  playerNickname = '';
-  gameState = 'menu';
+  location.reload();
+}
+
+// Long-press gesture: 3 seconds on menu canvas triggers dev reset confirmation
+let _devPressTimer = null;
+
+canvas.addEventListener('mousedown', (e) => {
+  if (gameState !== 'menu') return;
+  _devPressTimer = setTimeout(() => { if (gameState === 'menu' && confirm('DEV Reset?')) devReset(); }, 3000);
 });
+canvas.addEventListener('mouseup', () => clearTimeout(_devPressTimer));
+canvas.addEventListener('mouseleave', () => clearTimeout(_devPressTimer));
+
+canvas.addEventListener('touchstart', (e) => {
+  if (gameState !== 'menu') return;
+  _devPressTimer = setTimeout(() => { if (gameState === 'menu' && confirm('DEV Reset?')) devReset(); }, 3000);
+}, { passive: true });
+canvas.addEventListener('touchend', () => clearTimeout(_devPressTimer));
+canvas.addEventListener('touchmove', () => clearTimeout(_devPressTimer));
 
 const horse = {
   x: 160,
@@ -1679,7 +1696,7 @@ function update(dt) {
     frameCount++;
     animTimer += dt;
     if (animTimer >= 8) { animTimer -= 8; animFrame = animFrame === 0 ? 1 : 0; }
-    ParallaxBg.update(dt, 1.5); // slow crawl for menu background atmosphere
+    // ParallaxBg.update(dt, 1.5); // PARALLAX DISABLED — Phase 04
     return;
   }
   if (gameState !== 'playing') return;
@@ -1719,7 +1736,7 @@ function update(dt) {
   }
 
   groundOffset = (groundOffset + speed * dt) % 24;
-  ParallaxBg.update(dt, speed);
+  // ParallaxBg.update(dt, speed); // PARALLAX DISABLED — Phase 04
   score += Math.round(0.7 * dt);
 
   // --- Score pulse: trigger every 100 points milestone ---
@@ -2296,7 +2313,7 @@ function drawMenuButton(x, y, w, h, text, hovered) {
 }
 
 function drawMenu() {
-  ParallaxBg.draw(ctx, canvas.width, bgH);
+  drawBackground(); // PARALLAX DISABLED — Phase 04: was ParallaxBg.draw(ctx, canvas.width, bgH)
   drawGround();
 
   // Horse in center
@@ -2559,7 +2576,7 @@ function render() {
   if (gameState === 'menu') { drawMenu(); ScreenFade.draw(ctx, canvas.width, canvas.height); return; }
   if (gameState === 'leaderboard') { drawLeaderboard(); ScreenFade.draw(ctx, canvas.width, canvas.height); return; }
   if (gameState === 'recipes') { drawRecipes(); ScreenFade.draw(ctx, canvas.width, canvas.height); return; }
-  ParallaxBg.draw(ctx, canvas.width, bgH);
+  drawBackground(); // PARALLAX DISABLED — Phase 04: was ParallaxBg.draw(ctx, canvas.width, bgH)
   drawGround();
   drawAranciniSprites();
   drawHorseSprite();
