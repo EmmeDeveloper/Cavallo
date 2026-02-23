@@ -2157,7 +2157,7 @@ function drawHorseSprite() {
     ? sprites.horse_jump
     : sprites.horse_run1;
   // horse.x is left edge, horse.y is feet (bottom). Center horizontally.
-  drawSprite(img, horse.x + HORSE_W / 2, horse.y, 1); // 64*1 ≈ 55-78px hitbox
+  drawSprite(img, horse.x + HORSE_W / 2, horse.y + 10, 2); // scale 2 for visibility, +10 to ground feet
 
   // OLD code-drawn horse (commented out — Phase 04-02):
   // const isJumping = horse.jumping || !horse.grounded;
@@ -2193,7 +2193,7 @@ function drawObstacles() {
     // Phase 04-02: drawSprite with feet at obs.y (bottom of hitbox), centered on hitbox
     const getSpr = spriteMap[obs.type];
     if (getSpr) {
-      drawSprite(getSpr(), obs.x + obs.width / 2, obs.y, obs.height / 64);
+      drawSprite(getSpr(), obs.x + obs.width / 2, obs.y + 8, obs.height * 1.5 / 64);
     }
   }
 }
@@ -2357,7 +2357,7 @@ function drawFloatingTexts() {
 function drawAranciniSprites() {
   for (const a of arancini) {
     // Phase 04-02: sprite-based arancino
-    drawSprite(sprites.arancino, a.x + a.w / 2, a.y + a.h, 0.25);
+    drawSprite(sprites.arancino, a.x + a.w / 2, a.y + a.h + 4, 0.5);
     // OLD code-drawn: drawArancino(a.x, a.y);
   }
 }
@@ -2379,7 +2379,7 @@ function drawMenu() {
   drawGround();
 
   // Horse in center (Phase 04-02: sprite-based, static per user preference)
-  drawSprite(sprites.horse_run1, canvas.width / 2, GROUND_Y, 1.5);
+  drawSprite(sprites.horse_run1, canvas.width / 2, GROUND_Y + 10, 2.5);
   // OLD code-drawn: drawHorseOutline(canvas.width / 2 - 25, GROUND_Y, animFrame, false);
 
   // Title with glow
@@ -2665,7 +2665,7 @@ function render() {
       } else {
         img = (animFrame === 0) ? sprites.boss_idle : sprites.boss_charge;
       }
-      drawSprite(img, boss.x + boss.w / 2, boss.y, 2); // boss 132x108 → 64*2=128px
+      drawSprite(img, boss.x + boss.w / 2, boss.y + 12, 3); // boss bigger, +12 to ground feet
       // HP bar above boss (drawn after sprite so it's on top)
       const barX = boss.x + 4;
       const barY = boss.y - boss.h - 20;
@@ -2681,7 +2681,7 @@ function render() {
     for (let i = 0; i < bossLavas.length; i++) {
       // Phase 04-02: sprite-based lava
       // drawLava(bossLavas[i].x, bossLavas[i].y); // OLD code-drawn
-      drawSprite(sprites.lava, bossLavas[i].x + bossLavas[i].w / 2, bossLavas[i].y, 0.35);
+      drawSprite(sprites.lava, bossLavas[i].x + bossLavas[i].w / 2, bossLavas[i].y + 4, 0.6);
     }
     // Boss intro text with glow
     if (bossIntroTimer > 0) {
