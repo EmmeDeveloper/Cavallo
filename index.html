@@ -486,6 +486,40 @@ const AudioManager = (function() {
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 
+// ==================== SPRITE PRELOADER ====================
+const sprites = {};
+let spritesLoaded = 0;
+const SPRITE_TOTAL = 13;
+
+function loadSprite(key, src) {
+  sprites[key] = new Image();
+  sprites[key].onload  = () => { spritesLoaded++; };
+  sprites[key].onerror = () => { console.warn('Sprite failed:', src); spritesLoaded++; };
+  sprites[key].src = src;
+}
+
+loadSprite('horse_run1',       'sprites/horse_run1.png');
+loadSprite('horse_jump',       'sprites/horse_jump.png');
+loadSprite('boss_idle',        'sprites/boss_idle.png');
+loadSprite('boss_charge',      'sprites/boss_charge.png');
+loadSprite('boss_flash',       'sprites/boss_flash.png');
+loadSprite('arancino',         'sprites/arancino.png');
+loadSprite('fornacella1',      'sprites/fornacella1.png');
+loadSprite('fornacella2',      'sprites/fornacella2.png');
+loadSprite('fornacella_grill', 'sprites/fornacella_grill.png');
+loadSprite('maf_coltello',     'sprites/maf_coltello.png');
+loadSprite('maf_lupara',       'sprites/maf_lupara.png');
+loadSprite('maf_fornacella',   'sprites/maf_fornacella.png');
+loadSprite('lava',             'sprites/lava.png');
+
+// drawSprite: renders sprite at top-left (x,y) at exact (w,h) — no centering math needed
+// because sprites are generated at their exact hitbox dimensions.
+function drawSprite(img, x, y, w, h) {
+  if (!img || !img.complete || img.naturalWidth === 0) return;
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(img, Math.floor(x), Math.floor(y), w, h);
+}
+
 // ==================== GAME STATE ====================
 let GROUND_Y = 540;
 const GRAVITY = 0.55;
@@ -2116,11 +2150,59 @@ function drawGround() {
 
 function drawHorseSprite() {
   const isJumping = horse.jumping || !horse.grounded;
-  drawHorseOutline(horse.x, horse.y, animFrame, isJumping);
+  const img = isJumping ? sprites.horse_jump : sprites.horse_run1;
+  // horse.y is feet position; sprite top-left = (horse.x, horse.y - HORSE_H)
+  drawSprite(img, horse.x, horse.y - HORSE_H, HORSE_W, HORSE_H);
+  // Fallback to code-drawn if sprite not yet loaded
+  if (!img || !img.complete || img.naturalWidth === 0) {
+    drawHorseOutline(horse.x, horse.y, animFrame, isJumping);
+  }
 }
 
-// Obstacle draw lookup (avoid switch per frame)
-const OBS_DRAW = {
+function drawBossSprite() {
+  let img;
+  if (bossFlashTimer > 0) {
+    img = sprites.boss_flash;
+  } else {
+    img = (animFrame === 0) ? sprites.boss_idle : sprites.boss_charge;
+  }
+  if (img && img.complete && img.naturalWidth > 0) {
+    // boss.y is bottom; top-left = (boss.x, boss.y - boss.h)
+    drawSprite(img, boss.x, boss.y - boss.h, boss.w, boss.h);
+    // HP bar is drawn separately (inside drawLiotru — call with same coords for HP bar only)
+    drawBossHPBar(boss.x, boss.y);
+  } else {
+    drawLiotru(boss.x, boss.y, animFrame); // fallback
+  }
+}
+
+// Draw only the HP bar (extracted from drawLiotru for sprite mode)
+function drawBossHPBar(x, y) {
+  const s = 6;
+  const barX = x + 2*s;
+  const barY = y - 27*s;
+  for (let i = 0; i < bossHP; i++) {
+    const filled = i < (bossHP - bossHits);
+    ctx.fillStyle = filled ? '#ff2222' : '#444444';
+    ctx.fillRect(barX + i * 36, barY, 30, 12);
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(barX + i * 36, barY, 30, 12);
+  }
+}
+
+// Obstacle sprite lookup — maps obstacle type to sprite key
+const OBS_SPRITE = {
+  'fornacella1':     'fornacella1',
+  'fornacella2':     'fornacella2',
+  'fornacellaGrill': 'fornacella_grill',
+  'mafColtello':     'maf_coltello',
+  'mafLupara':       'maf_lupara',
+  'mafFornacella':   'maf_fornacella',
+};
+
+// Code-drawn fallback (kept for safety, commented-out originals below)
+const OBS_DRAW_FALLBACK = {
   'fornacella1': (x, y) => drawFornacella1(x, y, frameCount),
   'fornacella2': (x, y) => drawFornacella2(x, y, frameCount),
   'fornacellaGrill': (x, y) => drawFornacellaConArrostitori(x, y, frameCount),
@@ -2134,7 +2216,15 @@ function drawObstacles() {
   for (let i = 0, len = obstacles.length; i < len; i++) {
     const obs = obstacles[i];
     if (obs.x > cw + 10 || obs.x + obs.width < -10) continue;
-    OBS_DRAW[obs.type](obs.x, obs.y);
+    const sprKey = OBS_SPRITE[obs.type];
+    const spr = sprKey && sprites[sprKey];
+    if (spr && spr.complete && spr.naturalWidth > 0) {
+      // obs.y is bottom (GROUND_Y); top-left = (obs.x, obs.y - obs.height)
+      drawSprite(spr, obs.x, obs.y - obs.height, obs.width, obs.height);
+    } else {
+      // Fallback to code-drawn while sprites load
+      OBS_DRAW_FALLBACK[obs.type](obs.x, obs.y);
+    }
   }
 }
 
@@ -2296,7 +2386,13 @@ function drawFloatingTexts() {
 
 function drawAranciniSprites() {
   for (const a of arancini) {
-    drawArancino(a.x, a.y);
+    const spr = sprites.arancino;
+    if (spr && spr.complete && spr.naturalWidth > 0) {
+      // a.x, a.y is top-left; a.w/a.h is 16x16
+      drawSprite(spr, a.x, a.y, a.w, a.h);
+    } else {
+      drawArancino(a.x, a.y); // fallback
+    }
   }
 }
 
@@ -2316,8 +2412,15 @@ function drawMenu() {
   drawBackground(); // PARALLAX DISABLED — Phase 04: was ParallaxBg.draw(ctx, canvas.width, bgH)
   drawGround();
 
-  // Horse in center
-  drawHorseOutline(canvas.width / 2 - 25, GROUND_Y, animFrame, false);
+  // Horse in center (slightly larger for menu emphasis)
+  const mw = Math.floor(HORSE_W * 1.5);
+  const mh = Math.floor(HORSE_H * 1.5);
+  const mspr = sprites.horse_run1;
+  if (mspr && mspr.complete && mspr.naturalWidth > 0) {
+    drawSprite(mspr, canvas.width / 2 - mw / 2, GROUND_Y - mh, mw, mh);
+  } else {
+    drawHorseOutline(canvas.width / 2 - 25, GROUND_Y, animFrame, false); // fallback
+  }
 
   // Title with glow
   ctx.textAlign = 'center';
@@ -2583,9 +2686,16 @@ function render() {
   drawObstacles();
   // --- Boss rendering ---
   if (boss) {
-    drawLiotru(boss.x, boss.y, animFrame);
+    drawBossSprite();
     for (let i = 0; i < bossLavas.length; i++) {
-      drawLava(bossLavas[i].x, bossLavas[i].y);
+      const lv = bossLavas[i];
+      const lspr = sprites.lava;
+      if (lspr && lspr.complete && lspr.naturalWidth > 0) {
+        // lv.y is bottom; top-left = (lv.x, lv.y - lv.h)
+        drawSprite(lspr, lv.x, lv.y - lv.h, lv.w, lv.h);
+      } else {
+        drawLava(lv.x, lv.y); // fallback
+      }
     }
     // Boss intro text with glow
     if (bossIntroTimer > 0) {
