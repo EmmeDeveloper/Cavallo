@@ -10,27 +10,27 @@ See: .planning/PROJECT.md (updated 2026-02-22)
 ## Current Position
 
 Phase: 1 of 3 (Screen Effects and Visual Polish)
-Plan: 1 of TBD in current phase
+Plan: 2 of TBD in current phase
 Status: In progress
-Last activity: 2026-02-23 — Completed plan 01-01: ParallaxBg subsystem
+Last activity: 2026-02-23 — Completed plan 01-02: ScreenFade + score pulse + rank-up celebration
 
-Progress: [█░░░░░░░░░] 10%
+Progress: [██░░░░░░░░] 20%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 1
-- Average duration: 2min
-- Total execution time: ~0.03 hours
+- Total plans completed: 2
+- Average duration: 4min
+- Total execution time: ~0.13 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01-screen-effects-and-visual-polish | 1 | 2min | 2min |
+| 01-screen-effects-and-visual-polish | 2 | 8min | 4min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (2min)
+- Last 5 plans: 01-01 (2min), 01-02 (6min)
 - Trend: -
 
 *Updated after each plan completion*
@@ -48,6 +48,9 @@ Progress: [█░░░░░░░░░] 10%
 - [01-01]: Near-layer bg.webp usa double-draw pattern (x e x+canvasWidth) per scroll seamless infinito
 - [01-01]: Parallax procedurale confermato (nessun nuovo asset) — livelli far/mid sono canvas gradient e rettangoli
 - [01-01]: Subsystem pattern stabilito: IIFE namespace in <script> separato prima del codice principale di gioco
+- [01-02]: ScreenFade usa midpoint callback per 'out-in' — menu visibile durante fade-out, nuova scena appare durante fade-in
+- [01-02]: Score pulse solo su eventi discreti (ogni 100 pt e pickup arancino), non ogni frame — evita rumore visivo costante
+- [01-02]: Particelle rank-up movimentate dentro drawRankCelebration() non in update() — OK per 6 particelle a vita breve
 
 ### Pending Todos
 
@@ -61,5 +64,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: Completed 01-01-PLAN.md (ParallaxBg subsystem)
+Stopped at: Completed 01-02-PLAN.md (ScreenFade + score pulse + rank-up celebration)
 Resume file: None
