@@ -9,7 +9,7 @@ Requirements for polish release. Each maps to roadmap phases.
 
 ### Audio
 
-- [ ] **AUD-01**: Il gioco riproduce effetti sonori per azioni principali (salto, collisione, raccolta arancino, boss hit, boss sconfitto, game over)
+- [x] **AUD-01**: Il gioco riproduce effetti sonori per azioni principali (salto, collisione, raccolta arancino, boss hit, boss sconfitto, game over)
 - [ ] **AUD-02**: Il gioco riproduce musica di sottofondo in loop durante il gameplay
 - [ ] **AUD-03**: Il giocatore puo' attivare/disattivare l'audio tramite pulsante mute nel HUD
 - [ ] **AUD-04**: La musica cambia o si aggiunge un effetto sonoro quando appare il boss U Liotru
@@ -59,7 +59,7 @@ Deferred to future release. Tracked but not in current roadmap.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUD-01 | Phase 2 | Pending |
+| AUD-01 | Phase 2 | Complete |
 | AUD-02 | Phase 2 | Pending |
 | AUD-03 | Phase 2 | Pending |
 | AUD-04 | Phase 2 | Pending |

@@ -5,32 +5,33 @@
 See: .planning/PROJECT.md (updated 2026-02-22)
 
 **Core value:** Il gioco deve sembrare un prodotto professionale da store — grafica pixel art curata, animazioni fluide, effetti visivi ed audio coinvolgenti.
-**Current focus:** Phase 1 — Screen Effects and Visual Polish
+**Current focus:** Phase 2 — Audio Integration
 
 ## Current Position
 
-Phase: 1 of 3 (Screen Effects and Visual Polish)
+Phase: 2 of 3 (Audio Integration)
 Plan: 2 of TBD in current phase
 Status: In progress
-Last activity: 2026-02-23 — Completed plan 01-02: ScreenFade + score pulse + rank-up celebration
+Last activity: 2026-02-23 — Completed plan 02-01: AudioManager IIFE + Howler.js CDN + 6 SFX files
 
-Progress: [██░░░░░░░░] 20%
+Progress: [███░░░░░░░] 30%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 2
-- Average duration: 4min
-- Total execution time: ~0.13 hours
+- Total plans completed: 3
+- Average duration: 5min
+- Total execution time: ~0.27 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-screen-effects-and-visual-polish | 2 | 8min | 4min |
+| 02-audio-integration | 1 | 8min | 8min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (2min), 01-02 (6min)
+- Last 5 plans: 01-01 (2min), 01-02 (6min), 02-01 (8min)
 - Trend: -
 
 *Updated after each plan completion*
@@ -51,6 +52,10 @@ Progress: [██░░░░░░░░] 20%
 - [01-02]: ScreenFade usa midpoint callback per 'out-in' — menu visibile durante fade-out, nuova scena appare durante fade-in
 - [01-02]: Score pulse solo su eventi discreti (ogni 100 pt e pickup arancino), non ogni frame — evita rumore visivo costante
 - [01-02]: Particelle rank-up movimentate dentro drawRankCelebration() non in update() — OK per 6 particelle a vita breve
+- [02-01]: SFX files generati come WAV PCM sintetizzato (ffmpeg non disponibile) — etichettati .ogg/.mp3; Howler carica i byte WAV via Web Audio API
+- [02-01]: AudioManager.init() chiamato una volta in fondo allo script principale prima di requestAnimationFrame — guard initialized previene re-entry
+- [02-01]: playMusic/stopMusic stub presenti in AudioManager ma non connessi — rimandati a plan 02-02 (musica)
+- [02-01]: 3 chiamate AudioManager.play('gameOver'): collisione ostacolo, collisione lava, collisione laterale boss — ognuna all'interno del proprio blocco condizionale
 
 ### Pending Todos
 
@@ -58,11 +63,12 @@ None yet.
 
 ### Blockers/Concerns
 
-- Audio asset sourcing: i file CC0 SFX e musica devono essere trovati prima dell'implementazione Phase 2
+- SFX files sono WAV sintetizzati labellati .ogg/.mp3 — possono essere sostituiti con file CC0 reali senza modifiche al codice
+- Music files (music_game.ogg, music_boss.ogg) ancora mancanti — necessari per plan 02-02
 - Mobile testing: i pitfall iOS (autoplay audio, screen shake viewport) vanno verificati su dispositivo fisico dopo Phase 2
 
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: Completed 01-02-PLAN.md (ScreenFade + score pulse + rank-up celebration)
+Stopped at: Completed 02-01-PLAN.md (AudioManager IIFE + Howler.js CDN + 6 SFX files)
 Resume file: None
