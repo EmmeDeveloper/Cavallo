@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-22)
 
 **Core value:** Il gioco deve sembrare un prodotto professionale da store — grafica pixel art curata, animazioni fluide, effetti visivi ed audio coinvolgenti.
-**Current focus:** Phase 3 — Mobile Display
+**Current focus:** Phase 4 — Fix Graphics Issue
 
 ## Current Position
 
-Phase: 3 of 3 (Mobile Display)
+Phase: 4 of 4 (Fix Graphics Issue)
 Plan: 1 of 1 in current phase
-Status: Phase 03 Plan 01 complete — fullscreen cover canvas scaling verified and committed
-Last activity: 2026-02-23 — Completed plan 03-01: responsive canvas with cover strategy (Math.max), dvh fix
+Status: Phase 04 Plan 01 complete — static bg.webp restored, dev reset hidden, letterbox polished
+Last activity: 2026-02-23 — Completed plan 04-01: parallax disabled, long-press dev reset, blurred letterbox bars
 
-Progress: [█████████░] 90%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -38,6 +38,7 @@ Progress: [█████████░] 90%
 *Updated after each plan completion*
 | Phase 02-audio-integration P02 | 4 | 1 tasks | 5 files |
 | Phase 03-mobile-display P01 | 10 | 2 tasks | 1 file |
+| Phase 04-fix-graphics-issue P01 | 15 | 3 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -65,6 +66,13 @@ Progress: [█████████░] 90%
 - [Phase 03-01]: Cover scaling (Math.max) chosen over contain (Math.min) — canvas fills full viewport, background may crop on one axis, no black bars visible. User-directed decision.
 - [Phase 03-01]: canvas.width/height unchanged in resizeCanvas — only canvas.style dimensions scaled; game coordinate system and getBoundingClientRect input mapping remain intact
 - [Phase 03-01]: body overflow:hidden + flex centering ensures symmetric cropping when canvas overflows viewport
+- [Phase 04-fix-graphics-issue]: ParallaxBg code commented out (not deleted) — static bg.webp replaces scrolling layers
+- [Phase 04-fix-graphics-issue]: Dev reset hidden via CSS; devReset() accessible only via 3-second long-press on menu canvas
+- [Phase 04-fix-graphics-issue]: Letterbox bars styled with blurred darkened bg.webp via body::before (blur 24px, brightness 0.35)
+
+### Roadmap Evolution
+
+- Phase 4 added: Fix graphics issue
 
 ### Pending Todos
 
@@ -79,5 +87,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: Completed 03-01-PLAN.md — Phase 03 mobile display complete. All 3 phases done.
+Stopped at: Completed 04-01-PLAN.md — Phase 04 graphics fix complete. ParallaxBg disabled, dev reset hidden, letterbox polished.
 Resume file: None
