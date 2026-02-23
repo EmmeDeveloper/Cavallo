@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-22)
 
 **Core value:** Il gioco deve sembrare un prodotto professionale da store — grafica pixel art curata, animazioni fluide, effetti visivi ed audio coinvolgenti.
-**Current focus:** Phase 2 — Audio Integration
+**Current focus:** Phase 3 — Mobile Display
 
 ## Current Position
 
-Phase: 2 of 3 (Audio Integration)
-Plan: 2 of 2 in current phase
-Status: Phase complete — Phase 02 audio integration fully verified and committed
-Last activity: 2026-02-23 — Completed plan 02-02: background music + mute button HUD (human-verify approved)
+Phase: 3 of 3 (Mobile Display)
+Plan: 1 of 1 in current phase
+Status: Phase 03 Plan 01 complete — fullscreen cover canvas scaling verified and committed
+Last activity: 2026-02-23 — Completed plan 03-01: responsive canvas with cover strategy (Math.max), dvh fix
 
-Progress: [██████░░░░] 67%
+Progress: [█████████░] 90%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 3
-- Average duration: 5min
-- Total execution time: ~0.27 hours
+- Total plans completed: 4
+- Average duration: 6min
+- Total execution time: ~0.44 hours
 
 **By Phase:**
 
@@ -29,13 +29,15 @@ Progress: [██████░░░░] 67%
 |-------|-------|-------|----------|
 | 01-screen-effects-and-visual-polish | 2 | 8min | 4min |
 | 02-audio-integration | 1 | 8min | 8min |
+| 03-mobile-display | 1 | 10min | 10min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (2min), 01-02 (6min), 02-01 (8min)
+- Last 5 plans: 01-01 (2min), 01-02 (6min), 02-01 (8min), 03-01 (10min)
 - Trend: -
 
 *Updated after each plan completion*
 | Phase 02-audio-integration P02 | 4 | 1 tasks | 5 files |
+| Phase 03-mobile-display P01 | 10 | 2 tasks | 1 file |
 
 ## Accumulated Context
 
@@ -60,6 +62,9 @@ Progress: [██████░░░░] 67%
 - [Phase 02-02]: Music WAV files generated as synthesized PCM labeled .ogg/.mp3 — Howler loads WAV bytes via Web Audio API; real CC0 files can replace without code changes
 - [Phase 02-02]: btnMute 32x32px at hx-42 in drawScore(); uses S/M text labels (not emoji) per RESEARCH.md recommendation
 - [Phase 02-02]: Music state machine: playMusic(game) at 5 game-start paths, playMusic(boss) on boss spawn, playMusic(game) on boss defeat, stopMusic on 3 gameover paths + Escape + home button
+- [Phase 03-01]: Cover scaling (Math.max) chosen over contain (Math.min) — canvas fills full viewport, background may crop on one axis, no black bars visible. User-directed decision.
+- [Phase 03-01]: canvas.width/height unchanged in resizeCanvas — only canvas.style dimensions scaled; game coordinate system and getBoundingClientRect input mapping remain intact
+- [Phase 03-01]: body overflow:hidden + flex centering ensures symmetric cropping when canvas overflows viewport
 
 ### Pending Todos
 
@@ -74,5 +79,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: Completed 02-02-PLAN.md — Phase 02 audio integration fully complete. Ready for Phase 03.
+Stopped at: Completed 03-01-PLAN.md — Phase 03 mobile display complete. All 3 phases done.
 Resume file: None

@@ -22,8 +22,8 @@ Requirements for polish release. Each maps to roadmap phases.
 
 ### Mobile
 
-- [ ] **MOB-01**: Il gioco si adatta a schermo intero sia in orientamento verticale che orizzontale
-- [ ] **MOB-02**: Il canvas si ridimensiona dinamicamente per riempire lo schermo su qualsiasi dispositivo mobile
+- [x] **MOB-01**: Il gioco si adatta a schermo intero sia in orientamento verticale che orizzontale
+- [x] **MOB-02**: Il canvas si ridimensiona dinamicamente per riempire lo schermo su qualsiasi dispositivo mobile
 
 ## v2 Requirements
 
@@ -66,8 +66,8 @@ Deferred to future release. Tracked but not in current roadmap.
 | VIS-01 | Phase 1 | Complete |
 | VIS-02 | Phase 1 | Complete |
 | VIS-03 | Phase 1 | Complete |
-| MOB-01 | Phase 3 | Pending |
-| MOB-02 | Phase 3 | Pending |
+| MOB-01 | Phase 3 | Complete |
+| MOB-02 | Phase 3 | Complete |
 
 **Coverage:**
 - v1 requirements: 9 total
@@ -76,4 +76,4 @@ Deferred to future release. Tracked but not in current roadmap.
 
 ---
 *Requirements defined: 2026-02-22*
-*Last updated: 2026-02-22 — traceability mapped after roadmap creation*
+*Last updated: 2026-02-23 — MOB-01, MOB-02 marked complete after Phase 03 execution*
