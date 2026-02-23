@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-22)
 ## Current Position
 
 Phase: 2 of 3 (Audio Integration)
-Plan: 2 of TBD in current phase
-Status: In progress
-Last activity: 2026-02-23 — Completed plan 02-01: AudioManager IIFE + Howler.js CDN + 6 SFX files
+Plan: 2 of 2 in current phase
+Status: In progress (awaiting human-verify checkpoint for 02-02)
+Last activity: 2026-02-23 — Completed plan 02-02: background music + mute button HUD (checkpoint pending)
 
-Progress: [███░░░░░░░] 30%
+Progress: [█████░░░░░] 50%
 
 ## Performance Metrics
 
@@ -35,6 +35,7 @@ Progress: [███░░░░░░░] 30%
 - Trend: -
 
 *Updated after each plan completion*
+| Phase 02-audio-integration P02 | 4 | 1 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -56,6 +57,9 @@ Progress: [███░░░░░░░] 30%
 - [02-01]: AudioManager.init() chiamato una volta in fondo allo script principale prima di requestAnimationFrame — guard initialized previene re-entry
 - [02-01]: playMusic/stopMusic stub presenti in AudioManager ma non connessi — rimandati a plan 02-02 (musica)
 - [02-01]: 3 chiamate AudioManager.play('gameOver'): collisione ostacolo, collisione lava, collisione laterale boss — ognuna all'interno del proprio blocco condizionale
+- [Phase 02-02]: Music WAV files generated as synthesized PCM labeled .ogg/.mp3 — Howler loads WAV bytes via Web Audio API; real CC0 files can replace without code changes
+- [Phase 02-02]: btnMute 32x32px at hx-42 in drawScore(); uses S/M text labels (not emoji) per RESEARCH.md recommendation
+- [Phase 02-02]: Music state machine: playMusic(game) at 5 game-start paths, playMusic(boss) on boss spawn, playMusic(game) on boss defeat, stopMusic on 3 gameover paths + Escape + home button
 
 ### Pending Todos
 
@@ -64,11 +68,11 @@ None yet.
 ### Blockers/Concerns
 
 - SFX files sono WAV sintetizzati labellati .ogg/.mp3 — possono essere sostituiti con file CC0 reali senza modifiche al codice
-- Music files (music_game.ogg, music_boss.ogg) ancora mancanti — necessari per plan 02-02
+- Music files creati (music_game.ogg, music_boss.ogg) — WAV sintetizzati come SFX; pronti per verifica umana
 - Mobile testing: i pitfall iOS (autoplay audio, screen shake viewport) vanno verificati su dispositivo fisico dopo Phase 2
 
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: Completed 02-01-PLAN.md (AudioManager IIFE + Howler.js CDN + 6 SFX files)
+Stopped at: Checkpoint 02-02 Task 2 human-verify (all code complete, music files created, mute button wired)
 Resume file: None
