@@ -546,7 +546,7 @@ ParallaxBg.init(canvas.width, 540);
 function resizeCanvas() {
   const nativeW = canvas.width  || 960;
   const nativeH = canvas.height || 590;
-  const scale   = Math.min(window.innerWidth / nativeW, window.innerHeight / nativeH);
+  const scale   = Math.max(window.innerWidth / nativeW, window.innerHeight / nativeH);
   canvas.style.width  = Math.floor(nativeW * scale) + 'px';
   canvas.style.height = Math.floor(nativeH * scale) + 'px';
 }
