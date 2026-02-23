@@ -9,6 +9,7 @@ Il gioco funziona ed e' completo. Questo milestone porta la qualita' visiva e au
 - [x] **Phase 1: Screen Effects and Visual Polish** - Parallasse, transizioni fade, feedback punteggio
 - [x] **Phase 2: Audio Integration** - SFX, musica in loop, mute toggle, effetto sonoro boss (completed 2026-02-23)
 - [x] **Phase 3: Mobile Display** - Canvas responsive, fullscreen portrait e landscape (completed 2026-02-23)
+- [ ] **Phase 4: Fix Graphics Issue** - Rimuovi parallax, sprite PixelLab, nascondi reset, canvas letterbox
 
 ## Phase Details
 
@@ -54,12 +55,28 @@ Plans:
 Plans:
 - [x] 03-01-PLAN.md — CSS dvh fix + resizeCanvas() cover scaling (Math.max) + mobile verification (MOB-01, MOB-02)
 
+### Phase 4: Fix Graphics Issue
+**Goal:** Il gioco usa sprite pixel art PixelLab al posto dei disegni code-drawn, sfondo statico bg.webp senza parallax, pulsante reset nascosto, canvas letterboxed con barre sfocate
+**Depends on:** Phase 3
+**Requirements:** GFX-01, GFX-02, GFX-03, GFX-04
+**Success Criteria** (what must be TRUE):
+  1. Lo sfondo Catania bg.webp e' visibile come immagine statica senza livelli parallax sovrapposti
+  2. Tutti gli sprite di gioco (cavallo, ostacoli, arancini, boss, lava) sono immagini pixel art PixelLab, non forme disegnate via codice
+  3. Il pulsante "DEV: Reset" non e' visibile ai giocatori — accessibile solo con long-press 3 secondi nel menu
+  4. Il canvas usa scaling contain (Math.min) con barre letterbox che mostrano bg.webp sfocato
+**Plans:** 2 plans
+
+Plans:
+- [ ] 04-01-PLAN.md — Rimuovi parallax, nascondi reset button con long-press gesture, CSS letterbox polish (GFX-01, GFX-03, GFX-04)
+- [ ] 04-02-PLAN.md — Genera sprite PixelLab + preloader + sostituisci tutte le funzioni di disegno sprite (GFX-02)
+
 ## Progress
 
-**Execution Order:** 1 -> 2 -> 3
+**Execution Order:** 1 -> 2 -> 3 -> 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Screen Effects and Visual Polish | 2/2 | Complete | 2026-02-23 |
 | 2. Audio Integration | 2/2 | Complete   | 2026-02-23 |
 | 3. Mobile Display | 1/1 | Complete | 2026-02-23 |
+| 4. Fix Graphics Issue | 0/2 | Planning | — |
