@@ -39,6 +39,7 @@ Progress: [██████████] 100%
 | Phase 02-audio-integration P02 | 4 | 1 tasks | 5 files |
 | Phase 03-mobile-display P01 | 10 | 2 tasks | 1 file |
 | Phase 04-fix-graphics-issue P01 | 15 | 3 tasks | 1 files |
+| Phase 04-fix-graphics-issue P02 | 6min | 2 tasks | 15 files |
 
 ## Accumulated Context
 
@@ -69,6 +70,8 @@ Progress: [██████████] 100%
 - [Phase 04-fix-graphics-issue]: ParallaxBg code commented out (not deleted) — static bg.webp replaces scrolling layers
 - [Phase 04-fix-graphics-issue]: Dev reset hidden via CSS; devReset() accessible only via 3-second long-press on menu canvas
 - [Phase 04-fix-graphics-issue]: Letterbox bars styled with blurred darkened bg.webp via body::before (blur 24px, brightness 0.35)
+- [Phase 04-fix-graphics-issue]: Sprites generated at exact hitbox dims via pure-Node zlib PNG encoder — no external deps needed
+- [Phase 04-fix-graphics-issue]: drawSprite uses top-left positioning with exact w,h — no centering math, horse is static (horse_run1 on ground, horse_jump airborne)
 
 ### Roadmap Evolution
 
