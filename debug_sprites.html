@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Sprite Debug - U Cavaddu Runner</title>
+<style>
+  body { background: #1a1a2e; color: #eee; font-family: monospace; margin: 20px; }
+  h1 { color: #ffcc00; }
+  .grid { display: flex; flex-wrap: wrap; gap: 24px; }
+  .card {
+    background: #16213e;
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 16px;
+    text-align: center;
+  }
+  .card h3 { color: #aa00ff; margin: 0 0 8px 0; font-size: 13px; }
+  .card .info { font-size: 11px; color: #888; margin-top: 8px; }
+  canvas { border: 1px solid #444; display: block; margin: 0 auto; }
+</style>
+</head>
+<body>
+<h1>Sprite Debug View</h1>
+<p>Purple = hitbox | Green = ground line | Sprite drawn at hitbox dimensions | Scale 4x for visibility</p>
+<div class="grid" id="grid"></div>
+
+<script>
+const SCALE = 4;
+
+const SPRITE_DATA = {
+  'horse_run1': 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAADHklEQVR4nO2XP2jUUBzHvyfCEbg0GdoeLi2tkQpCudapCK0FkVuEIlQcqnZyaXcRdXJxcXSWVgcHcXAsioLoJpRCoaWxxyVDyd0NyeUgZHoO3nt9+XO55Jqey/tA4C55f76/935/3gMEAoFAIBCcGTJoxwt5qhgEVVaI32kAp0ZkMuZ/GUDoY7tO4L3faUCVldRGXMxbWRKqrBDbdaBpFfZO13f57yiWxgGgkHbMYRpAADDxLasGAGg36wCArhtRA1KTtwsx19C0Cu8GRNMqGC1PATgVbxzvoShJrJHveVBlJdOEuRlAg9HvNOAbW0xk91ukvXVyFBBfLI1jZGwSxvFephjIywCy//EZvD/PYX+6DPv7JjbX7wLd3aArz4sP027WmTuFAjuRQQwg/ENX6+vvfUilz6zRor8HIOjzLauG/d2d2EGLksSeUFpNpF+0RwahwRaYvBt41rbM3s1sXAisZFw/9s3zIrEAACNjk301JmUhwqe7llWL3Xoq7uXTJyg/fMv8/fWrF1i9txoQFod+eIBr1xfZOAAwMT2LufmFxH6UXtaRcK5uN+uJYuiqUdIIN00D1ZU1poMP3tHyFK0RiTvQNwZaVg1+p9FXEO/D/dpSePEAYLtOYW5+Abbr0CzWt6DFNYisfpL/DoJ+eIAbN+/Adp3UFbcXkR3gc7au72YuLGnQZq5mSpVJRAwID5zXRDzheDkLiTtA/7/f2o4VUSyNQz88SJzg25ed2P957WwkjdquUxgtpysimlaBaRowTQMAsHzrdkRoHKZRzyy0F4lplEtjJJxGuWMvUWUFH969iR3o/oONQP3wPS9VgUpL4nFalZVIDPieh18/f/CvCrbroLqyRqhb2K4D/jffd2J6NjfxScLZGUeVFbL+6DFpN+vE7zRIu1mn56C0EL/TYE/Gvn2JXYnuzYl++3dMznA+CUFCl5VcVz+2EvcqMHn6bl6kOU4XypeunHmiPMaII/V9oChJUGUl021pGGS60FgnRwNX5l5H8aFBM9PyUnWQTEKWl6r0on/+WaiXiFBuH1ZfgUAgEAgEgvPiL8LmbX10MlHzAAAAAElFTkSuQmCC',
+  'horse_jump': 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAADYElEQVR4nO2YT2jTUBzHvxUhBBuTw2wsMmWYojAP0YMgE3QwhpeBF8HDPIjHedIdvAgDrx716MHhyYMwRBQRBC87Ocpg0rKw0o2yNi2StoGSi89D+2Kavtb05RU2yAcCzWveL7/f+73fnxcgIeFYQUQLPCFaIANCL8+1oSmqcCMmCfFc2zcgcAkjJVIYAwIAnmvDKhYAAHO3l+C0m8LeP0kD/JXWFBW1w92BB/RsDgCwv7eN02cucOlykle7UWiKSqb0mb4xr9OBJMuYNRexk/8KAL5RUjoDTVFJzzNjGSI8iDVFJVev3cDNuev+2NbmBiRZBgA0aiXWHIQNjopwDzjtJg4qVRxUqv4YVR4AcysBvmFjb6OJp9GtzY2h/0npDKR0BlP6DJx2kysGJrGF+u6Dq09593adBnAKQMqy8tzJJJYBmqKSUGHqy/GvXq4OzLGKBTx99oJ7xcNwx4CmqGR/bxuSLEPP5pjFaX5hse+e1oJAHYgNlwc0BSV1A53Isgwnw0UX//Bm8fEV6xRK/mpcsh8Pm0ZcHnAaTfx++MSTi28H/hvWJYBAOPSZZ7XjYQ7Bu49/4XO5yt9Y1FXdn9vGxDUE43rAQIA87fu4MundVpBAXS94rl2ZEGaogqJhcgGGIZJGrVS3xZZW1vDk5WHzFTJ4vu3blxMT58XFsiRUhntbUYF5jhI6QyXHiz+FwN+/86rPF11r9PxxzzXhufaaNXLaNXLsQ45zC1EBdIGy7LyXMKp8no2h2EelGSZttMEHJ4YGgPB7rBVL48r11f+/oMVOO1mymnnoWdztGX2g9hzbUiyzB3UAwawevlhQUqVDFZcOhZUnt6HfndlpzOEZ4EoAwY47SamdGD63FkcVKpYXr7LnEjbgrDSlUoVj1ZW6YpG2hJxthHrYWIY5j9FrfzQ/B6sAwB4z7qEHmh6sRb/RBY+Nc2ai6zHYBhmb393r97LuVJio1bi6pFYQZxCqMxbVh5WsdDXy+jZnKiWOBWnqDE9MEqg1+nAKhaEtsSTghiGSQCQnZ8/iOfapFUvk1a9LPzj1KQghmHSExdp1cvBr2zHBt8Az7XDx8djAQG6xe2obp2oWYTQWtDrJCf9TTUyYxUcwzD9Ch3nU4hIxjIgxtyEhISEhISEhKPIXy+lgUD1ma2JAAAAAElFTkSuQmCC',
+  'boss_idle': 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIQAAABsCAYAAACrUxpIAAABn0lEQVR42u3bwQ2DMBAEQDfpItyFS6EESkkZeaYDIiVfLHHExHE0J+13Qb75IItUa932knOWE2md56ik6AABBBBAAAEEEEAAAcRlIHqllDJ1lmUJJXo+j/ttN73Ov9UPBBBAAAEEEEAAAQQQQMwCIppeIFr7BQIIIIAAAggggAACCCCAAAIIIIAAAggggAACCCCA+GTxo0A0oQABBBBAAAEEEEAAAQQQk4OI/kcTfW74cxQIIIAAAggggAACCCCAmPxyaxQIl1tAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQADxzrquU+fXQPTaIxBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQMwC4moorf5el0//+v7RaYFOo8QBAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEB8c4AAAggggAACCCCAAAIIIIAAAggggAACCCCAAAIIIIAAAggggAACCCCAAAIIIIAAAggggAACCCCAAAKIw5Nz3npE/7l+IPQDoR8I/UDoBwIIIIAAAgggLAwICwPCwoCwMCBe8wR6ynAcisO8FgAAAABJRU5ErkJggg==',
+  'boss_charge': 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIQAAABsCAYAAACrUxpIAAABmElEQVR42u3ZsQ3DIAAEQJZkCG/BKIzAKBkjZTZwpNSmwIEgyCF9+7L4ayxCSum8SoxRbqR2n7MSWg8QQAABBBBAAAEEEEAMA9Erx3EsnZxzU1rv5/V8XKbX/df6gQACCCCAAAIIIIAAAohVQLSmF4javkAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEN8MPwtEFQoQQAABBBBAAAEEEEAAsTiIMOkAAQQQQAABBBBAAAEEELs+brUOObofCCCAAAIIIIAAAggggAACCCCAAAIIIIAAAggg/g1EKWXpAAEEEEAAAQQQQAABBBBA7A2i145AAAEEEEAAAQQQQAAxDsRoKLX+Xo9Pu34/EEAAAQQQQAABBBBAAAHEXBC13+YwSxwQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAcQvDxBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQGwNIsZ49oj+e/1A6AdCPxD6gdAPBBBAAAEEEEAYDAiDAWEwIAwGxOe8AUYZcByzA4hzAAAAAElFTkSuQmCC',
+  'boss_flash': 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIQAAABsCAYAAACrUxpIAAABiElEQVR42u3bwQmEMBAFUPuvbVpIC2nBhT1vwNEJMcsb+NdR8t9Fgkfv/fyViJAbGZ3nqhzZAQIIIIAAAggggAACiGkgqrL7tNZSqTqf2ecPBBBAAAEEEEAAAQQQQOwCIpsqEKN+gQACCCCAAAIIIIAAAggggAACCCCAAAIIIIAAAgggnhS/CsQQChBAAAEEEEAAAQQQQACxOYjsfzTZ56Y/R4EAAggggAACCCCAAAKIzS+3VoFwuQUEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBATCmsqEcggAACCCCAAAIIIIAAAggggAACCCCAAAIIIIDYBcRsKFW/qY/mX98/O7P3AwEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAvHqAAAIIIIAAAggggAACCCCAAAIIIIAAAggggAACCCCAAAIIIIAAAggggAACCCCAAAIIIIAAAggggAACiMsTEWdF7L+3Hwj7gbAfCPuBsB8IIIAAAggggFAYEAoDQmFAKAyI73wAxTE2GhZJRk0AAAAASUVORK5CYII=',
+  'arancino': 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAR0lEQVR42mNgQANXOrj+48MMhADZBhDSSNAgsg1Al/hwwgOMX6wwQME4DaKaAega6G8ALrwhgwMrHk4G4EoPRGukmgEDlhsBfZXzICzhrTAAAAAASUVORK5CYII=',
+  'fornacella1': 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABsAAAAkCAYAAAB4+EEtAAAAfUlEQVR42u3WQQ2AMAyF4WrBAlpqoRZmYRZmoVpmAS2PU5cdICwwSNja5LuQ5f1XiPz8fnXYCMZjfcKZYDx2PSoEc/qGCUcmjKWUYFS1eOP7wLEQAowu1F29P0ksxljklW6rdyaP9eIxj7XHRARfGThWHzPDPPlZatoZKrYDDnYckSauQ/QAAAAASUVORK5CYII=',
+  'fornacella2': 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAoCAYAAADpE0oSAAAAeklEQVR42u3WwQ2AIBBE0SnFEijBJmxhW6AFQgfbgrXYgrWspyUcIMYEOehM8i+E+DgKcBwAO2Ee4XmPUFjpaEf4GbDBWnXvC8wjfDtVNS+HpbSvoVnvTn1ef/PnsIiYF2N8tdoiXEopDYkwYcKECRP+AMw/kOEwN2sX6oI+fOenKdkAAAAASUVORK5CYII=',
+  'fornacella_grill': 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACQAAAA8CAYAAAAOhRhuAAAA70lEQVR42u3XMQqDQBCF4bmCNxArS2EvkEt4BVubgJATSG5g+jQ5iYVlWq/gFSbVDFu4hI2TlYU38Dey6FcMokSR835eWSqKQvOvU8oBKAYUCqDTQdu2sbSu69f88wAlA/k7cQRktlsAxYAWop8D6BQQljoLkNWbehxHDaDsQGY4gGLGOccxAZQd6O9/IADtzTzPnQRQFqDQDvV9rwF0OsjfG+6IpdCDeSENoGSge1my9Lo0WlVV2qNptNCZW11rAJmDpmniVAFkAhqGgaXFkXn+/QEyB4X+EI4EEEAAAZQdyJ+2bVk68l1ldR+A9uYDqL0rIkFhbnkAAAAASUVORK5CYII=',
+  'maf_coltello': 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACEAAAA/CAYAAABuOKGEAAAA80lEQVR42u3ZsQ3CMBAFUI9A2lTIpSskL0CdEagREzBFekbIDgxA6RIJCSkrZIWjsnXFnWQbAxH6X/pN5FxeESeFjVHinKPamlYBIsZaSy0KRDXCe09S79M5lT9Au67NAaIIoYU/rOu6VO26+USAkBA51eYsy0KxQFQjruOBYsf9Tixfo80JIVDsPM+pQBQheG6XI0nNuReIIoS25fjW0sLXaHM4ovh7AISEeE5bsUA0QeT8hNR34mFStZ8Tnzm4TSoQ7RHKFgUCiP9A5OQdRLMAEdP3A8VaexLL1wABBBBAAAEEEKtCfPW0BwgcxK0egfwiL/0CzjLXRj0MAAAAAElFTkSuQmCC',
+  'maf_lupara': 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACQAAABICAYAAACeNle2AAAA1ElEQVR42u3WvQ3DIBBAYepUdktlISFZjJApMkLqjJI+fcbJEsxCqqArjAyyETZ5J73G8s9XcVYqY67zHEpStQfQHojqOECAugC5aQo1A7Q7KDWf1yOUVH11AFo9ApwOv1IIeQ+gQ4HGcYxJkLz+vt9igJqA5IedvqwG6FAgVscpQDk41Wr+G6S1DktZa2Pe+9hTqZi8J/UeQIAAAeoSJAPUBJRaljmgVPLZ4mUMCFB3oJwjYAuoyu8soBKcMWax6ghAgAABAgRoC2gYQkmAAAFizjxfCm+0eGaPrlsAAAAASUVORK5CYII=',
+  'maf_fornacella': 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACEAAABUCAYAAAAMC14dAAAA9ElEQVR42u3YwQnCMBTG8ayQFbJCFvCQAbx0A+kEQlbIAo7gxTk89ug+z1PsKyTUZ5MY2u+D/0VS+CEWS5USjiZFMfWvHQ+Br70rxAI0KkoFRDPEZBVJAqI4wntPsRCCKH4tEEDsD8E3DAPFtpwBojhCGhDFEc45KhEQRRB8r/uVJFW5XYFIIbTWn3KfA9EMgR9mV4jH+bQaEFURfM/bhVI1fVdxDMTiNhvtXHBzzqTjZ9i14lsXCBHim4AAYheI7DNBBUQWBMTqCiG2/ZsBAUSXCDZrLcVyb2T4mSrPlUAAAQQQQAABxK8zxpAkIIA4DgJrtTcxv/y23UND9AAAAABJRU5ErkJggg==',
+  'lava': 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAANklEQVR42mM4o8Twn5qYgWYG/nehDNPRwDQS8cAZ2EEADx4DV6HhUQOHQzoc/Hl50Bo4aEtsAFttb+4mK4dGAAAAAElFTkSuQmCC',
+};
+
+const entities = [
+  { name: 'Horse (run)', key: 'horse_run1', hitW: 55, hitH: 78, note: 'PixelLab 48x48' },
+  { name: 'Horse (jump)', key: 'horse_jump', hitW: 55, hitH: 78, note: 'PixelLab 48x48' },
+  { name: 'Boss (idle)', key: 'boss_idle', hitW: 132, hitH: 108, note: 'gen 132x108' },
+  { name: 'Boss (charge)', key: 'boss_charge', hitW: 132, hitH: 108, note: 'gen 132x108' },
+  { name: 'Boss (flash)', key: 'boss_flash', hitW: 132, hitH: 108, note: 'gen 132x108' },
+  { name: 'Arancino', key: 'arancino', hitW: 16, hitH: 16, note: 'gen 16x16' },
+  { name: 'Fornacella 1', key: 'fornacella1', hitW: 27, hitH: 36, note: 'gen 27x36' },
+  { name: 'Fornacella 2', key: 'fornacella2', hitW: 30, hitH: 40, note: 'gen 30x40' },
+  { name: 'Fornacella Grill', key: 'fornacella_grill', hitW: 36, hitH: 60, note: 'gen 36x60' },
+  { name: 'Maf Coltello', key: 'maf_coltello', hitW: 33, hitH: 63, note: 'gen 33x63' },
+  { name: 'Maf Lupara', key: 'maf_lupara', hitW: 36, hitH: 72, note: 'gen 36x72' },
+  { name: 'Maf Fornacella', key: 'maf_fornacella', hitW: 33, hitH: 84, note: 'gen 33x84' },
+  { name: 'Lava', key: 'lava', hitW: 20, hitH: 20, note: 'gen 20x20' },
+];
+
+const grid = document.getElementById('grid');
+
+entities.forEach(e => {
+  const card = document.createElement('div');
+  card.className = 'card';
+
+  const img = new Image();
+  img.src = SPRITE_DATA[e.key];
+  img.onload = () => {
+    const cw = Math.max(e.hitW, img.width) * SCALE + 40;
+    const ch = Math.max(e.hitH, img.height) * SCALE + 40;
+    const cvs = document.createElement('canvas');
+    cvs.width = cw;
+    cvs.height = ch;
+    const ctx = cvs.getContext('2d');
+
+    ctx.imageSmoothingEnabled = false;
+
+    // Draw sprite at hitbox dimensions (how game renders it)
+    const sx = (cw - e.hitW * SCALE) / 2;
+    const sy = ch - e.hitH * SCALE - 10;
+    ctx.drawImage(img, sx, sy, e.hitW * SCALE, e.hitH * SCALE);
+
+    // Purple hitbox outline
+    ctx.strokeStyle = '#aa00ff';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(sx, sy, e.hitW * SCALE, e.hitH * SCALE);
+
+    // Ground line (green)
+    ctx.strokeStyle = '#00ff44';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(0, sy + e.hitH * SCALE);
+    ctx.lineTo(cw, sy + e.hitH * SCALE);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    const h3 = document.createElement('h3');
+    h3.textContent = e.name;
+    card.appendChild(h3);
+    card.appendChild(cvs);
+    const info = document.createElement('div');
+    info.className = 'info';
+    info.innerHTML = 'Sprite: ' + img.width + 'x' + img.height + 'px | Hitbox: ' + e.hitW + 'x' + e.hitH + 'px<br>' + e.note;
+    card.appendChild(info);
+
+    grid.appendChild(card);
+  };
+});
+</script>
+</body>
+</html>

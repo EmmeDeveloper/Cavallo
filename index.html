@@ -2158,11 +2158,15 @@ function drawHorseSprite() {
     const renderW = 96, renderH = 96;
     const cx = horse.x + HORSE_W / 2; // center of hitbox
     const drawX = cx - renderW / 2;
-    const drawY = horse.y - renderH + 18; // +18 shifts down to ground feet
+    const drawY = horse.y - renderH + 26; // +26 shifts down (raised 2px per user)
     ctx.drawImage(img, Math.floor(drawX), Math.floor(drawY), renderW, renderH);
   } else {
     drawHorseOutline(horse.x, horse.y, animFrame, isJumping);
   }
+  // DEBUG: purple 2px hitbox outline (height reduced 15px per user)
+  ctx.strokeStyle = '#aa00ff';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(horse.x, horse.y - HORSE_H + 15, HORSE_W, HORSE_H - 15);
 }
 
 function drawBossSprite() {
@@ -2180,6 +2184,9 @@ function drawBossSprite() {
   } else {
     drawLiotru(boss.x, boss.y, animFrame); // fallback
   }
+  // DEBUG: purple hitbox
+  ctx.strokeStyle = '#aa00ff'; ctx.lineWidth = 2;
+  ctx.strokeRect(boss.x, boss.y - boss.h, boss.w, boss.h);
 }
 
 // Draw only the HP bar (extracted from drawLiotru for sprite mode)
@@ -2231,6 +2238,9 @@ function drawObstacles() {
       // Fallback to code-drawn while sprites load
       OBS_DRAW_FALLBACK[obs.type](obs.x, obs.y);
     }
+    // DEBUG: purple hitbox
+    ctx.strokeStyle = '#aa00ff'; ctx.lineWidth = 2;
+    ctx.strokeRect(obs.x, obs.y - obs.height, obs.width, obs.height);
   }
 }
 
@@ -2399,6 +2409,9 @@ function drawAranciniSprites() {
     } else {
       drawArancino(a.x, a.y); // fallback
     }
+    // DEBUG: purple hitbox
+    ctx.strokeStyle = '#aa00ff'; ctx.lineWidth = 2;
+    ctx.strokeRect(a.x, a.y, a.w, a.h);
   }
 }
 
@@ -2702,6 +2715,9 @@ function render() {
       } else {
         drawLava(lv.x, lv.y); // fallback
       }
+      // DEBUG: purple hitbox
+      ctx.strokeStyle = '#aa00ff'; ctx.lineWidth = 2;
+      ctx.strokeRect(lv.x, lv.y - lv.h, lv.w, lv.h);
     }
     // Boss intro text with glow
     if (bossIntroTimer > 0) {
