@@ -1,0 +1,2776 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>U Cavaddu Runner - Catania Edition</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #1a0a0a url('bg.webp') center/cover no-repeat;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100dvh;
+    overflow: hidden;
+    font-family: 'Courier New', monospace;
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: url('bg.webp') center/cover no-repeat;
+    filter: blur(24px) brightness(0.35);
+    z-index: -1;
+    transform: scale(1.05);
+  }
+  #wrap {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  canvas {
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    cursor: pointer;
+    display: block;
+    touch-action: none;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  #introVideo {
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 60vw; height: auto;
+    max-height: 70vh;
+    object-fit: contain;
+    background: #000;
+    border: 3px solid #ff6633;
+    display: none;
+    z-index: 100;
+    cursor: pointer;
+  }
+  #videoBg {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: rgba(0,0,0,0.8);
+    display: none;
+    z-index: 99;
+  }
+  #skipBtn {
+    position: fixed;
+    bottom: 30px; right: 30px;
+    z-index: 101;
+    display: none;
+    background: rgba(0,0,0,0.7);
+    color: #ffcc00;
+    border: 2px solid #ff6633;
+    padding: 10px 24px;
+    font-family: 'Courier New', monospace;
+    font-size: 15px;
+    cursor: pointer;
+  }
+  #skipBtn:hover { background: rgba(255,68,0,0.5); }
+  /* #resetBtn hidden — Phase 04: dev reset moved to 3-second long-press on menu canvas */
+  #resetBtn {
+    display: none;
+  }
+  #creditsOverlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: rgba(0,0,0,0.92);
+    display: none;
+    z-index: 110;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    font-family: 'Courier New', monospace;
+    text-align: center;
+    color: #fff;
+  }
+  #creditsOverlay.show { display: flex; }
+  #creditsOverlay h2 {
+    color: #ffcc00;
+    font-size: 28px;
+    margin-bottom: 16px;
+    text-shadow: 0 0 12px #ff4400;
+  }
+  #creditsOverlay p {
+    color: #ffa866;
+    font-size: 14px;
+    margin-bottom: 20px;
+  }
+  #creditsOverlay .credits-links {
+    display: flex;
+    gap: 32px;
+    margin-bottom: 28px;
+  }
+  #creditsOverlay .credits-links a {
+    color: #ff8855;
+    font-size: 18px;
+    font-weight: bold;
+    text-decoration: none;
+    border: 2px solid #ff6633;
+    padding: 10px 22px;
+    transition: all 0.2s;
+  }
+  #creditsOverlay .credits-links a:hover {
+    color: #ffcc00;
+    border-color: #ffcc00;
+    background: rgba(255,68,0,0.3);
+  }
+  #creditsCloseBtn {
+    background: rgba(0,0,0,0.7);
+    color: #ffcc00;
+    border: 2px solid #ff6633;
+    padding: 10px 32px;
+    font-family: 'Courier New', monospace;
+    font-size: 16px;
+    cursor: pointer;
+  }
+  #creditsCloseBtn:hover { background: rgba(255,68,0,0.5); }
+  #nicknameOverlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: rgba(0,0,0,0.92);
+    display: none;
+    z-index: 110;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    font-family: 'Courier New', monospace;
+    text-align: center;
+    color: #fff;
+  }
+  #nicknameOverlay.show { display: flex; }
+  #nicknameOverlay h2 {
+    color: #ffcc00;
+    font-size: 28px;
+    margin-bottom: 16px;
+    text-shadow: 0 0 12px #ff4400;
+  }
+  #nicknameInput {
+    background: rgba(0,0,0,0.7);
+    color: #ffcc00;
+    border: 2px solid #ff6633;
+    padding: 10px 18px;
+    font-family: 'Courier New', monospace;
+    font-size: 20px;
+    text-align: center;
+    margin-bottom: 16px;
+    outline: none;
+    width: 220px;
+  }
+  #nicknameInput:focus { border-color: #ffcc00; }
+  #nicknameBtn {
+    background: rgba(0,0,0,0.7);
+    color: #ffcc00;
+    border: 2px solid #ff6633;
+    padding: 10px 32px;
+    font-family: 'Courier New', monospace;
+    font-size: 16px;
+    cursor: pointer;
+  }
+  #nicknameBtn:hover { background: rgba(255,68,0,0.5); }
+</style>
+</head>
+<body>
+<div id="nicknameOverlay">
+  <h2>COME TI CHIAMI?</h2>
+  <input id="nicknameInput" maxlength="12" placeholder="Nickname...">
+  <button id="nicknameBtn">JUCA!</button>
+</div>
+<div id="creditsOverlay">
+  <h2>U CAVADDU RUNNER</h2>
+  <p>Realizzato by 2 coglioni durante la festa di Sant'Agata</p>
+  <div class="credits-links">
+    <a href="https://instagram.com/m.molica" target="_blank">@m.molica</a>
+    <a href="https://instagram.com/bardimito" target="_blank">@bardimito</a>
+  </div>
+  <button id="creditsCloseBtn">CHIUDI</button>
+</div>
+<div id="videoBg"></div>
+<div id="wrap">
+  <canvas id="game"></canvas>
+  <video id="introVideo" playsinline></video>
+  <button id="skipBtn">SKIP >></button>
+</div>
+<button id="resetBtn">DEV: Reset</button>
+<script>
+// PARALLAX DISABLED — Phase 04: restored static bg.webp per user decision
+/* eslint-disable */
+/*
+// ==================== PARALLAX BACKGROUND ====================
+// Self-contained subsystem. Exposes ParallaxBg.init(), .update(dt, speed), .draw(ctx, canvasWidth, bgHeight)
+const ParallaxBg = (function() {
+  // --- Offscreen canvas for the static far-layer sky gradient ---
+  let skyCanvas = null;
+  let skyCtx = null;
+
+  // --- Layer offsets ---
+  let farOffset = 0;   // sky (speed 0.15)
+  let midOffset = 0;   // city silhouette (speed 0.4)
+  let nearOffset = 0;  // bg.webp (speed 1.0)
+
+  // --- Stored dimensions ---
+  let cW = 960;
+  let bgH = 540;
+
+  // --- Mid layer: building strip data ---
+  let buildings = [];     // { x, w, h }
+  let stripWidth = 0;     // total width of building strip (~2x canvas)
+
+  // --- Seeded simple random for deterministic building layout ---
+  function seededRand(seed) {
+    let s = seed;
+    return function() {
+      s = (s * 1664525 + 1013904223) & 0xffffffff;
+      return (s >>> 0) / 0xffffffff;
+    };
+  }
+
+  function init(canvasWidth, bgHeight) {
+    cW = canvasWidth;
+    bgH = bgHeight;
+
+    // --- Build sky gradient onto an offscreen canvas once ---
+    skyCanvas = document.createElement('canvas');
+    skyCanvas.width = cW;
+    skyCanvas.height = bgH;
+    skyCtx = skyCanvas.getContext('2d');
+    const grad = skyCtx.createLinearGradient(0, 0, 0, bgH);
+    grad.addColorStop(0,   '#2a0a1a');  // dark warm purple-maroon at top
+    grad.addColorStop(0.5, '#7a2a1a');  // mid deep red
+    grad.addColorStop(1,   '#cc6040');  // dusky orange at horizon
+    skyCtx.fillStyle = grad;
+    skyCtx.fillRect(0, 0, cW, bgH);
+
+    // --- Generate building strip for mid layer ---
+    buildings = [];
+    const rand = seededRand(42);
+    const targetWidth = Math.ceil(cW * 2.2); // ~2x canvas width for seamless wrap
+    let curX = 0;
+    while (curX < targetWidth) {
+      const w = Math.floor(rand() * 40 + 20);   // 20-60px wide
+      const h = Math.floor(rand() * 80 + 40);   // 40-120px tall
+      buildings.push({ x: curX, w, h });
+      curX += w + Math.floor(rand() * 6 + 1);  // small gap between buildings
+    }
+    stripWidth = curX;
+
+    // Reset offsets
+    farOffset = 0;
+    midOffset = 0;
+    nearOffset = 0;
+  }
+
+  function update(dt, speed) {
+    // Advance each layer offset; use modulo to wrap seamlessly
+    farOffset  = (farOffset  + speed * 0.15 * dt) % cW;
+    midOffset  = (midOffset  + speed * 0.4  * dt) % stripWidth;
+    nearOffset = (nearOffset + speed * 1.0  * dt) % cW;
+  }
+
+  function draw(ctx, canvasWidth, bgHeight) {
+    // Guard: if not yet initialised, run init with defaults
+    if (!skyCanvas) init(canvasWidth, bgHeight);
+
+    cW = canvasWidth;
+    bgH = bgHeight;
+
+    // --- FAR layer: sky gradient (static offscreen canvas, no per-frame gradient) ---
+    // Sky doesn't need to scroll horizontally — it's a uniform gradient
+    ctx.drawImage(skyCanvas, 0, 0, Math.floor(cW), Math.floor(bgH));
+
+    // --- MID layer: city silhouette buildings ---
+    // Buildings are drawn from their strip offset; two passes ensure wrap coverage
+    const buildingTop = bgH * 0.6;  // buildings sit in lower 40% of bg area
+    ctx.fillStyle = '#1a0a0a';
+    const startOff = -Math.floor(midOffset);
+    for (let pass = 0; pass < 3; pass++) {
+      const passOff = startOff + pass * stripWidth;
+      if (passOff > cW) break;
+      for (let i = 0; i < buildings.length; i++) {
+        const b = buildings[i];
+        const bx = Math.floor(b.x + passOff);
+        if (bx + b.w < 0) continue;
+        if (bx > cW) break;
+        // Vary building shade slightly for depth
+        const shade = (i % 3 === 0) ? '#1a0a0a' : (i % 3 === 1) ? '#221212' : '#2a1515';
+        ctx.fillStyle = shade;
+        const bTop = Math.floor(buildingTop + (bgH - buildingTop - b.h));
+        ctx.fillRect(bx, bTop, b.w, b.h + 2); // +2 to avoid gap at bottom
+      }
+    }
+
+    // --- NEAR layer: bg.webp (or fallback gradient) scrolling at full speed ---
+    // Access globals bgImage and bgLoaded from the main script (same file)
+    if (typeof bgLoaded !== 'undefined' && bgLoaded && typeof bgImage !== 'undefined') {
+      ctx.imageSmoothingEnabled = false;
+      // Draw twice side-by-side for seamless wrap
+      const nx = Math.floor(-nearOffset);
+      ctx.drawImage(bgImage, nx,        0, Math.floor(cW), Math.floor(bgH));
+      ctx.drawImage(bgImage, nx + Math.floor(cW), 0, Math.floor(cW), Math.floor(bgH));
+    } else {
+      // Fallback gradient matching existing drawBackground() fallback colors
+      const grad = ctx.createLinearGradient(0, 0, 0, bgH);
+      grad.addColorStop(0,   '#ff6040');
+      grad.addColorStop(0.3, '#ff8855');
+      grad.addColorStop(0.6, '#cc7070');
+      grad.addColorStop(1,   '#553344');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, Math.floor(cW), Math.floor(bgH));
+    }
+  }
+
+  return { init, update, draw };
+})();
+*/
+</script>
+<script>
+// ==================== SCREEN FADE ====================
+// Self-contained subsystem for fade transitions between game states.
+// Exposes ScreenFade.start(type, duration, callback), .update(dt), .draw(ctx, w, h), .active
+const ScreenFade = (function() {
+  let _alpha = 0;
+  let _timer = 0;
+  let _totalDuration = 1;
+  let _phase = 'fading-out'; // 'fading-out' | 'fading-in'
+  let _midCallback = null;
+  let _type = 'out'; // 'out' | 'in' | 'out-in'
+  let _active = false;
+  let _callbackFired = false;
+
+  // type: 'out' (clear->black), 'in' (black->clear), 'out-in' (clear->black->callback->clear)
+  function start(type, duration, callback) {
+    _type = type;
+    _totalDuration = duration || 30;
+    _midCallback = callback || null;
+    _callbackFired = false;
+    _active = true;
+
+    if (type === 'in') {
+      _alpha = 1;
+      _timer = _totalDuration;
+      _phase = 'fading-in';
+    } else {
+      _alpha = 0;
+      _timer = 0;
+      _phase = 'fading-out';
+    }
+  }
+
+  function update(dt) {
+    if (!_active) return;
+
+    if (_phase === 'fading-out') {
+      _timer += dt;
+      const halfDur = _totalDuration / 2;
+      _alpha = Math.min(_timer / halfDur, 1);
+      if (_timer >= halfDur) {
+        _alpha = 1;
+        if (_type === 'out-in') {
+          if (!_callbackFired && _midCallback) {
+            _callbackFired = true;
+            _midCallback();
+          }
+          _phase = 'fading-in';
+          _timer = halfDur;
+        } else {
+          _active = false;
+        }
+      }
+    } else if (_phase === 'fading-in') {
+      _timer -= dt;
+      const halfDur = _totalDuration / 2;
+      _alpha = Math.max(_timer / halfDur, 0);
+      if (_timer <= 0) {
+        _alpha = 0;
+        _active = false;
+      }
+    }
+  }
+
+  function draw(ctx, w, h) {
+    if (!_active || _alpha <= 0) return;
+    ctx.save();
+    ctx.globalAlpha = Math.min(1, Math.max(0, _alpha));
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(0, 0, w, h);
+    ctx.restore();
+  }
+
+  return {
+    get active() { return _active; },
+    start,
+    update,
+    draw
+  };
+})();
+</script>
+<script>
+// ==================== AUDIO MANAGER ====================
+// Wraps Howler.js for SFX and music playback.
+// Exposes: init, play, playMusic, stopMusic, setMute, isMuted
+const AudioManager = (function() {
+  let musicHowl = null;
+  let muted = false;
+  let initialized = false;
+
+  const SFX = {
+    jump:         null,
+    collect:      null,
+    collision:    null,
+    bossHit:      null,
+    bossDefeated: null,
+    gameOver:     null,
+  };
+
+  function init() {
+    if (initialized) return;
+    initialized = true;
+
+    muted = localStorage.getItem('cavalloMuted') === '1';
+    Howler.mute(muted);
+
+    const files = {
+      jump:         ['audio/jump.ogg',         'audio/jump.mp3'],
+      collect:      ['audio/collect.ogg',       'audio/collect.mp3'],
+      collision:    ['audio/collision.ogg',     'audio/collision.mp3'],
+      bossHit:      ['audio/boss_hit.ogg',      'audio/boss_hit.mp3'],
+      bossDefeated: ['audio/boss_defeated.ogg', 'audio/boss_defeated.mp3'],
+      gameOver:     ['audio/game_over.ogg',     'audio/game_over.mp3'],
+    };
+
+    for (const [name, src] of Object.entries(files)) {
+      SFX[name] = new Howl({ src, volume: 0.6, preload: true });
+    }
+  }
+
+  function play(name) {
+    if (SFX[name]) SFX[name].play();
+  }
+
+  function playMusic(track) {
+    if (musicHowl) { musicHowl.stop(); musicHowl.unload(); musicHowl = null; }
+    const src = track === 'boss'
+      ? ['audio/music_boss.ogg', 'audio/music_boss.mp3']
+      : ['audio/music_game.ogg', 'audio/music_game.mp3'];
+    musicHowl = new Howl({ src, loop: true, volume: 0.4, html5: false });
+    musicHowl.play();
+  }
+
+  function stopMusic() {
+    if (musicHowl) { musicHowl.stop(); }
+  }
+
+  function setMute(val) {
+    muted = !!val;
+    Howler.mute(muted);
+    localStorage.setItem('cavalloMuted', muted ? '1' : '0');
+  }
+
+  function isMuted() { return muted; }
+
+  return { init, play, playMusic, stopMusic, setMute, isMuted };
+})();
+</script>
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+
+// ==================== SPRITE PRELOADER ====================
+const sprites = {};
+let spritesLoaded = 0;
+const SPRITE_TOTAL = 13;
+
+function loadSprite(key, src) {
+  sprites[key] = new Image();
+  sprites[key].onload  = () => { spritesLoaded++; };
+  sprites[key].onerror = () => { console.warn('Sprite failed:', src); spritesLoaded++; };
+  sprites[key].src = src;
+}
+
+loadSprite('horse_run1',       'sprites/horse_run1.png');
+loadSprite('horse_jump',       'sprites/horse_jump.png');
+loadSprite('boss_idle',        'sprites/boss_idle.png');
+loadSprite('boss_charge',      'sprites/boss_charge.png');
+loadSprite('boss_flash',       'sprites/boss_flash.png');
+loadSprite('arancino',         'sprites/arancino.png');
+loadSprite('fornacella1',      'sprites/fornacella1.png');
+loadSprite('fornacella2',      'sprites/fornacella2.png');
+loadSprite('fornacella_grill', 'sprites/fornacella_grill.png');
+loadSprite('maf_coltello',     'sprites/maf_coltello.png');
+loadSprite('maf_lupara',       'sprites/maf_lupara.png');
+loadSprite('maf_fornacella',   'sprites/maf_fornacella.png');
+loadSprite('lava',             'sprites/lava.png');
+
+// drawSprite: renders sprite at top-left (x,y) at exact (w,h) — no centering math needed
+// because sprites are generated at their exact hitbox dimensions.
+function drawSprite(img, x, y, w, h) {
+  if (!img || !img.complete || img.naturalWidth === 0) return;
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(img, Math.floor(x), Math.floor(y), w, h);
+}
+
+// ==================== GAME STATE ====================
+let GROUND_Y = 540;
+const GRAVITY = 0.55;
+const JUMP_FORCE = -12;
+const HORSE_W = 55;
+const HORSE_H = 78;
+
+let gameState = 'menu'; // 'menu', 'playing', 'gameover', 'leaderboard'
+let score = 0;
+let highScore = parseInt(localStorage.getItem('cavalloHighScore')) || 0;
+let speed = 5.0;
+let baseSpeed = 5.0;
+let frameCount = 0;
+let animFrame = 0;
+let lastObstacleSpawn = 0;
+let menuHover = ''; // 'play', 'recipes', 'intro', 'leaderboard', or ''
+let postBossGracePeriod = 0; // grace period after boss defeat
+let obstaclesSinceLastBreather = 0; // breather tracking for clusters
+let framesSinceLastArancino = 0; // arancino spawn tracking
+
+// ==================== LEADERBOARD ====================
+const LEADERBOARD_URL = 'https://script.google.com/macros/s/AKfycbw-cQVuORTcvZciMq1T-3mDI4AFXvALU2jYbpLZmir8I8j0RmG18XVCU97XxPo1MRht/exec';
+let playerNickname = localStorage.getItem('cavalloNickname') || '';
+let leaderboardData = [];
+let leaderboardLoading = false;
+let scoreSubmitted = false;
+let btnLeaderboard = { x: 0, y: 0, w: 0, h: 0 };
+let btnLeaderboardBack = { x: 0, y: 0, w: 0, h: 0 };
+
+// ==================== BACKGROUND IMAGE ====================
+const ROAD_HEIGHT = 50; // road drawn below the full image
+const bgImage = new Image();
+bgImage.src = 'bg.webp';
+let bgLoaded = false;
+let bgH = 540; // will be set on load
+bgImage.onload = () => {
+  const maxW = 960;
+  let w = bgImage.naturalWidth, h = bgImage.naturalHeight;
+  const scale = Math.min(maxW / w, 1);
+  const scaledW = Math.floor(w * scale);
+  const scaledH = Math.floor(h * scale);
+  canvas.width = scaledW;
+  canvas.height = scaledH + ROAD_HEIGHT;
+  bgH = scaledH;
+  GROUND_Y = bgH; // ground line sits right at the bottom of the image
+  horse.y = GROUND_Y;
+  bgLoaded = true;
+  // ParallaxBg.init(canvas.width, bgH); // PARALLAX DISABLED — Phase 04
+  resizeCanvas();
+};
+
+// Default canvas before image loads
+canvas.width = 960;
+canvas.height = 540 + ROAD_HEIGHT;
+// ParallaxBg.init(canvas.width, 540); // PARALLAX DISABLED — Phase 04
+
+// ==================== RESPONSIVE CANVAS SCALING ====================
+function resizeCanvas() {
+  const nativeW = canvas.width  || 960;
+  const nativeH = canvas.height || 590;
+  const scale   = Math.min(window.innerWidth / nativeW, window.innerHeight / nativeH);
+  canvas.style.width  = Math.floor(nativeW * scale) + 'px';
+  canvas.style.height = Math.floor(nativeH * scale) + 'px';
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+if (screen.orientation) {
+  screen.orientation.addEventListener('change', resizeCanvas);
+}
+
+// ==================== PIXEL HELPER ====================
+function px(x, y, w, h, color) {
+  ctx.fillStyle = color;
+  ctx.fillRect(Math.floor(x), Math.floor(y), w, h);
+}
+
+// Text with black outline for readability on any background
+function outText(text, x, y, color, font, align) {
+  ctx.font = font || ctx.font;
+  ctx.textAlign = align || ctx.textAlign;
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = '#000';
+  ctx.lineJoin = 'round';
+  ctx.strokeText(text, x, y);
+  ctx.fillStyle = color || ctx.fillStyle;
+  ctx.fillText(text, x, y);
+}
+
+// ==================== WHITE/CREAM HORSE (smaller, s=2) ====================
+function drawHorseOutline(baseX, baseY, frame, jumping) {
+  // Draw horse silhouette in dark color for outline, then real horse on top
+  const offsets = [[-2,0],[2,0],[0,-2],[0,2],[-1,-1],[1,-1],[-1,1],[1,1]];
+  ctx.globalAlpha = 0.7;
+  for (const [ox, oy] of offsets) {
+    drawHorseBody(baseX + ox, baseY + oy, frame, jumping, true);
+  }
+  ctx.globalAlpha = 1.0;
+  drawHorseBody(baseX, baseY, frame, jumping, false);
+}
+
+function drawHorseBody(baseX, baseY, frame, jumping, outlineMode) {
+  const s = 2;
+
+  // Outline mode: everything is dark
+  const body1 = outlineMode ? '#111' : '#f0e8dd';  // cream white
+  const body2 = outlineMode ? '#111' : '#e0d4c4';  // warm shadow
+  const body3 = outlineMode ? '#111' : '#d0c4b4';  // deeper shadow
+  const bodyHi = outlineMode ? '#111' : '#f8f4ee';  // highlight
+  const belly  = outlineMode ? '#111' : '#f5efe5';  // light belly
+  const backLn = outlineMode ? '#111' : '#c8baa8';  // back line
+  const mane   = outlineMode ? '#111' : '#1a1410';  // dark mane
+  const mane2  = outlineMode ? '#111' : '#2a2218';
+  const headC  = outlineMode ? '#111' : '#f0e8dd';
+  const snout  = outlineMode ? '#111' : '#f5ece0';
+  const muzzle = outlineMode ? '#111' : '#f8ddd0';  // pinkish muzzle
+  const earIn  = outlineMode ? '#111' : '#f0c8b8';
+  const eyeW   = outlineMode ? '#111' : '#fff';
+  const eyeP   = outlineMode ? '#111' : '#111';
+  const nostril= outlineMode ? '#111' : '#bfa090';
+  const mouth  = outlineMode ? '#111' : '#d0b8a8';
+  const legC1  = outlineMode ? '#111' : '#e0d4c4';
+  const legC2  = outlineMode ? '#111' : '#d0c0b0';
+  const jointC = outlineMode ? '#111' : '#c0b0a0';
+  const hoofC  = outlineMode ? '#111' : '#333';
+  const beerMug   = outlineMode ? '#111' : '#daa520';
+  const beerMugHi = outlineMode ? '#111' : '#e8b830';
+  const beerLiq   = outlineMode ? '#111' : '#e8a020';
+  const beerLiqHi = outlineMode ? '#111' : '#f0b830';
+  const beerFoam  = outlineMode ? '#111' : '#fffff0';
+  const beerFoam2 = outlineMode ? '#111' : '#fffde0';
+  const beerHandle= outlineMode ? '#111' : '#8a6020';
+  const beerRim   = outlineMode ? '#111' : '#8a5a10';
+  const splashC   = outlineMode ? '#111' : '#f0c040';
+  const splashC2  = outlineMode ? '#111' : '#ffe070';
+
+  // --- TAIL ---
+  const tailWag = jumping ? -3 : (frame === 0 ? 2 : -2);
+  px(baseX - 4*s, baseY - 22*s, s, 2*s, mane);
+  px(baseX - 5*s, baseY - 24*s + tailWag, s, 3*s, mane);
+  px(baseX - 6*s, baseY - 25*s + tailWag, s, 4*s, mane);
+  px(baseX - 7*s, baseY - 24*s + tailWag*1.5, s, 3*s, mane2);
+  px(baseX - 8*s, baseY - 23*s + tailWag*1.5, s, 2*s, mane2);
+
+  // --- BODY ---
+  for (let i = 0; i < 14; i++) {
+    const shade = i < 3 ? body1 : i < 6 ? bodyHi : i < 10 ? body2 : body3;
+    px(baseX + i*s, baseY - 24*s, s, 10*s, shade);
+  }
+  // Belly
+  for (let i = 3; i < 11; i++) {
+    px(baseX + i*s, baseY - 16*s, s, 2*s, belly);
+  }
+  // Back line
+  for (let i = 1; i < 13; i++) {
+    px(baseX + i*s, baseY - 24*s, s, s, backLn);
+  }
+  // Chest
+  px(baseX + 14*s, baseY - 23*s, s, 7*s, body2);
+  px(baseX + 14*s, baseY - 22*s, s, 5*s, body1);
+  // Shoulder highlights
+  px(baseX + 11*s, baseY - 22*s, 2*s, 3*s, bodyHi);
+  px(baseX + 3*s, baseY - 22*s, 2*s, 3*s, bodyHi);
+
+  // --- NECK ---
+  px(baseX + 14*s, baseY - 28*s, 2*s, 5*s, body2);
+  px(baseX + 15*s, baseY - 31*s, 2*s, 4*s, body2);
+  px(baseX + 16*s, baseY - 33*s, 2*s, 3*s, body2);
+  px(baseX + 14*s, baseY - 28*s, s, 5*s, body1);
+  px(baseX + 15*s, baseY - 31*s, s, 3*s, body1);
+
+  // --- MANE ---
+  const maneOff = frame === 0 ? 0 : s;
+  px(baseX + 13*s, baseY - 29*s + maneOff, s, 6*s, mane);
+  px(baseX + 14*s, baseY - 32*s + maneOff, s, 5*s, mane);
+  px(baseX + 15*s, baseY - 34*s + maneOff, s, 4*s, mane);
+  px(baseX + 16*s, baseY - 35*s + maneOff, s, 3*s, mane);
+  px(baseX + 12*s, baseY - 27*s + maneOff, s, 4*s, mane2);
+  px(baseX + 17*s, baseY - 37*s, s, 2*s, mane);
+
+  // --- HEAD ---
+  px(baseX + 17*s, baseY - 35*s, 3*s, 4*s, headC);
+  px(baseX + 18*s, baseY - 36*s, 2*s, 2*s, headC);
+  px(baseX + 20*s, baseY - 34*s, 3*s, 3*s, snout);
+  px(baseX + 21*s, baseY - 33*s, 2*s, 2*s, muzzle);
+  px(baseX + 22*s, baseY - 33*s, 2*s, 2*s, muzzle);
+
+  // --- EARS ---
+  px(baseX + 17*s, baseY - 37*s, s, 2*s, body2);
+  px(baseX + 19*s, baseY - 37*s, s, 2*s, body2);
+  px(baseX + 17*s, baseY - 36*s, s, s, earIn);
+  px(baseX + 19*s, baseY - 36*s, s, s, earIn);
+
+  // --- EYE ---
+  px(baseX + 19*s, baseY - 35*s, 2*s, 2*s, eyeW);
+  px(baseX + 20*s, baseY - 35*s, s, s, eyeP);
+
+  // --- NOSTRIL ---
+  px(baseX + 23*s, baseY - 33*s, s, s, nostril);
+  // --- MOUTH ---
+  px(baseX + 21*s, baseY - 31*s, 2*s, s, mouth);
+
+  // --- LEGS ---
+  if (jumping) {
+    px(baseX + 12*s, baseY - 14*s, 2*s, 3*s, legC1);
+    px(baseX + 13*s, baseY - 11*s, 2*s, 3*s, legC2);
+    px(baseX + 14*s, baseY - 9*s, 2*s, s, hoofC);
+    px(baseX + 2*s, baseY - 14*s, 2*s, 3*s, legC1);
+    px(baseX + 1*s, baseY - 11*s, 2*s, 3*s, legC2);
+    px(baseX + 0*s, baseY - 9*s, 2*s, s, hoofC);
+  } else if (frame === 0) {
+    px(baseX + 14*s, baseY - 14*s, 2*s, 4*s, legC1);
+    px(baseX + 15*s, baseY - 10*s, 2*s, 3*s, legC2);
+    px(baseX + 15*s, baseY - 7*s, s, s, jointC);
+    px(baseX + 16*s, baseY - 6*s, 2*s, 4*s, legC2);
+    px(baseX + 16*s, baseY - 2*s, 2*s, 2*s, hoofC);
+
+    px(baseX + 11*s, baseY - 14*s, 2*s, 4*s, legC1);
+    px(baseX + 10*s, baseY - 10*s, 2*s, 5*s, legC2);
+    px(baseX + 10*s, baseY - 5*s, s, s, jointC);
+    px(baseX + 10*s, baseY - 4*s, 2*s, 2*s, legC2);
+    px(baseX + 10*s, baseY - 2*s, 2*s, 2*s, hoofC);
+
+    px(baseX + 1*s, baseY - 14*s, 2*s, 4*s, legC1);
+    px(baseX + 0*s, baseY - 10*s, 2*s, 5*s, legC2);
+    px(baseX + 0*s, baseY - 5*s, s, s, jointC);
+    px(baseX - 1*s, baseY - 4*s, 2*s, 2*s, legC2);
+    px(baseX - 1*s, baseY - 2*s, 2*s, 2*s, hoofC);
+
+    px(baseX + 4*s, baseY - 14*s, 2*s, 3*s, legC1);
+    px(baseX + 5*s, baseY - 11*s, 2*s, 4*s, legC2);
+    px(baseX + 5*s, baseY - 7*s, s, s, jointC);
+    px(baseX + 6*s, baseY - 6*s, 2*s, 4*s, legC2);
+    px(baseX + 6*s, baseY - 2*s, 2*s, 2*s, hoofC);
+  } else {
+    px(baseX + 12*s, baseY - 14*s, 2*s, 4*s, legC1);
+    px(baseX + 11*s, baseY - 10*s, 2*s, 5*s, legC2);
+    px(baseX + 11*s, baseY - 5*s, s, s, jointC);
+    px(baseX + 11*s, baseY - 4*s, 2*s, 2*s, legC2);
+    px(baseX + 11*s, baseY - 2*s, 2*s, 2*s, hoofC);
+
+    px(baseX + 14*s, baseY - 14*s, 2*s, 3*s, legC1);
+    px(baseX + 15*s, baseY - 11*s, 2*s, 4*s, legC2);
+    px(baseX + 16*s, baseY - 6*s, 2*s, 4*s, legC2);
+    px(baseX + 16*s, baseY - 2*s, 2*s, 2*s, hoofC);
+
+    px(baseX + 3*s, baseY - 14*s, 2*s, 3*s, legC1);
+    px(baseX + 4*s, baseY - 11*s, 2*s, 4*s, legC2);
+    px(baseX + 5*s, baseY - 6*s, 2*s, 4*s, legC2);
+    px(baseX + 5*s, baseY - 2*s, 2*s, 2*s, hoofC);
+
+    px(baseX + 1*s, baseY - 14*s, 2*s, 4*s, legC1);
+    px(baseX - 1*s, baseY - 10*s, 2*s, 5*s, legC2);
+    px(baseX - 1*s, baseY - 5*s, s, s, jointC);
+    px(baseX - 2*s, baseY - 4*s, 2*s, 2*s, legC2);
+    px(baseX - 2*s, baseY - 2*s, 2*s, 2*s, hoofC);
+  }
+
+  // --- BEER MUG ---
+  const bx = baseX + 6*s;
+  const by = baseY - 18*s;
+  px(bx - s, by + s, s, 4*s, beerHandle);
+  px(bx - 2*s, by + 2*s, s, 2*s, beerHandle);
+  px(bx, by, 4*s, 6*s, beerMug);
+  px(bx + s, by, 2*s, 6*s, beerMugHi);
+  px(bx + s, by + s, 2*s, 4*s, beerLiq);
+  px(bx + s, by + 2*s, 2*s, 2*s, beerLiqHi);
+  px(bx, by - s, 4*s, s, beerFoam);
+  px(bx + s, by - 2*s, 2*s, s, beerFoam2);
+  px(bx, by + 6*s, 4*s, s, beerRim);
+
+  if (jumping) {
+    px(bx + s, by - 3*s, s, s, splashC);
+    px(bx + 3*s, by - 4*s, s, s, splashC);
+    px(bx - s, by - 2*s, s, s, splashC2);
+    px(bx + 5*s, by - 3*s, s, s, splashC);
+    px(bx + 2*s, by - 5*s, s, s, beerFoam);
+    px(bx + 4*s, by - 2*s, s, s, beerFoam);
+  }
+}
+
+// ==================== MAFIOSO TYPE 1: COLTELLO ====================
+function drawMafiosoColtello(x, y) {
+  const s = 3;
+  // Coppola
+  px(x + 2*s, y - 20*s, 6*s, s, '#222');
+  px(x + s, y - 19*s, 8*s, s, '#333');
+  px(x + 2*s, y - 21*s, 5*s, s, '#2a2a2a');
+  // Head
+  px(x + 3*s, y - 19*s, 4*s, 4*s, '#d4a574');
+  px(x + 3*s, y - 16*s, 4*s, s, '#b88a5a');
+  px(x + 4*s, y - 18*s, s, s, '#111');
+  px(x + 6*s, y - 18*s, s, s, '#111');
+  px(x + 4*s, y - 19*s, s, s, '#222');
+  px(x + 6*s, y - 19*s, s, s, '#222');
+  px(x + 4*s, y - 16*s, 2*s, s, '#8a4030');
+  // Neck
+  px(x + 4*s, y - 15*s, 2*s, s, '#c49564');
+  // Canottiera
+  px(x + 3*s, y - 14*s, 4*s, 6*s, '#eee');
+  px(x + 4*s, y - 14*s, 2*s, 6*s, '#fff');
+  px(x + 4*s, y - 13*s, 2*s, s, '#daa520');
+  px(x + 5*s, y - 12*s, s, s, '#ffd700');
+  // Arms
+  px(x + s, y - 14*s, 2*s, 2*s, '#d4a574');
+  px(x + 7*s, y - 14*s, 2*s, 2*s, '#d4a574');
+  px(x, y - 12*s, 2*s, 3*s, '#d4a574');
+  px(x + 8*s, y - 12*s, 2*s, 3*s, '#d4a574');
+  // Knife
+  px(x + 9*s, y - 12*s, s, 3*s, '#4a2a10');
+  px(x + 9*s, y - 16*s, s, 4*s, '#ccc');
+  px(x + 9*s, y - 17*s, s, s, '#eee');
+  px(x + 10*s, y - 16*s, s, 2*s, '#ddd');
+  // Pants
+  px(x + 3*s, y - 8*s, 4*s, 5*s, '#1a1a4a');
+  px(x + 4*s, y - 8*s, 2*s, 5*s, '#222266');
+  // Shoes
+  px(x + 3*s, y - 3*s, 2*s, 2*s, '#222');
+  px(x + 5*s, y - 3*s, 2*s, 2*s, '#222');
+  px(x + 2*s, y - 2*s, s, s, '#222');
+  px(x + 7*s, y - 2*s, s, s, '#222');
+}
+
+// ==================== MAFIOSO TYPE 2: LUPARA ====================
+function drawMafiosoLupara(x, y) {
+  const s = 3;
+  // Fedora
+  px(x + s, y - 21*s, 8*s, s, '#2a2020');
+  px(x + 2*s, y - 23*s, 6*s, 2*s, '#3a2828');
+  px(x + 3*s, y - 24*s, 4*s, s, '#3a2828');
+  // Head
+  px(x + 3*s, y - 20*s, 4*s, 5*s, '#c8956a');
+  px(x + 3*s, y - 19*s, s, 2*s, '#3a2a1a');
+  px(x + 6*s, y - 19*s, s, 2*s, '#3a2a1a');
+  px(x + 4*s, y - 18*s, s, s, '#111');
+  px(x + 6*s, y - 18*s, s, s, '#111');
+  px(x + 4*s, y - 17*s, 3*s, s, '#2a1a0a');
+  px(x + 7*s, y - 18*s, s, 2*s, '#a06050');
+  // Neck
+  px(x + 4*s, y - 15*s, 2*s, s, '#c8956a');
+  // Suit
+  px(x + 2*s, y - 14*s, 6*s, 7*s, '#1a1a1a');
+  px(x + 3*s, y - 14*s, 4*s, 7*s, '#252525');
+  px(x + 4*s, y - 14*s, 2*s, 3*s, '#ddd');
+  px(x + 5*s, y - 14*s, s, 4*s, '#8a0000');
+  // Arms
+  px(x + s, y - 14*s, s, 4*s, '#1a1a1a');
+  px(x + 8*s, y - 14*s, s, 4*s, '#1a1a1a');
+  px(x, y - 10*s, 2*s, 2*s, '#c8956a');
+  px(x + 8*s, y - 10*s, 2*s, 2*s, '#c8956a');
+  // Lupara
+  px(x - s, y - 14*s, s, s, '#555');
+  px(x, y - 13*s, s, s, '#555');
+  px(x + s, y - 12*s, s, s, '#555');
+  px(x + 2*s, y - 11*s, s, s, '#555');
+  px(x - 2*s, y - 15*s, s, s, '#666');
+  px(x - 3*s, y - 16*s, s, s, '#666');
+  px(x - 4*s, y - 17*s, s, s, '#777');
+  px(x - 5*s, y - 18*s, s, s, '#777');
+  px(x - 6*s, y - 19*s, 2*s, s, '#444');
+  px(x + 3*s, y - 10*s, s, 2*s, '#5a3a1a');
+  px(x + 4*s, y - 9*s, s, 2*s, '#5a3a1a');
+  // Pants
+  px(x + 3*s, y - 7*s, 4*s, 4*s, '#1a1a1a');
+  px(x + 4*s, y - 7*s, 2*s, 4*s, '#222');
+  // Shoes
+  px(x + 3*s, y - 3*s, 2*s, 2*s, '#1a1010');
+  px(x + 5*s, y - 3*s, 2*s, 2*s, '#1a1010');
+}
+
+// ==================== MAFIOSO TYPE 3: CON FORNACELLA ====================
+function drawMafiosoFornacella(x, y, fc) {
+  const s = 3;
+  // Beret
+  px(x + 2*s, y - 20*s, 6*s, s, '#444');
+  px(x + 3*s, y - 21*s, 4*s, s, '#555');
+  // Head
+  px(x + 3*s, y - 19*s, 4*s, 4*s, '#d4a574');
+  px(x + 4*s, y - 18*s, s, s, '#111');
+  px(x + 6*s, y - 18*s, s, s, '#111');
+  px(x + 4*s, y - 16*s, 3*s, s, '#aa5040');
+  // Neck
+  px(x + 4*s, y - 15*s, 2*s, s, '#c49564');
+  // Polo
+  px(x + 2*s, y - 14*s, 6*s, 6*s, '#006633');
+  px(x + 3*s, y - 14*s, 4*s, 6*s, '#008844');
+  px(x + 4*s, y - 14*s, 2*s, s, '#004422');
+  // Arms
+  px(x + s, y - 14*s, s, 3*s, '#d4a574');
+  px(x + 8*s, y - 14*s, s, 3*s, '#d4a574');
+  px(x, y - 11*s, 2*s, s, '#d4a574');
+  px(x + 8*s, y - 11*s, 2*s, s, '#d4a574');
+  // Mini fornacella
+  const fx = x + s, fy = y - 27*s;
+  px(fx + s, fy + 5*s, s, 2*s, '#555');
+  px(fx + 4*s, fy + 5*s, s, 2*s, '#555');
+  px(fx, fy + 3*s, 6*s, 2*s, '#777');
+  px(fx + s, fy + 3*s, 4*s, 2*s, '#888');
+  px(fx + s, fy + 2*s, 4*s, s, '#cc3300');
+  const flicker = fc % 10 < 5;
+  px(fx + 2*s, fy + s, 2*s, s, flicker ? '#ff6600' : '#ff4400');
+  px(fx + s, fy, s, s, flicker ? '#ffcc00' : '#ff8800');
+  px(fx + 3*s, fy - s, s, s, flicker ? '#ffcc00' : '#ff9900');
+  // Pants
+  px(x + 3*s, y - 8*s, 4*s, 5*s, '#333');
+  px(x + 4*s, y - 8*s, 2*s, 5*s, '#444');
+  // Shoes
+  px(x + 3*s, y - 3*s, 2*s, 2*s, '#222');
+  px(x + 5*s, y - 3*s, 2*s, 2*s, '#222');
+}
+
+// ==================== FORNACELLA VARIANTS ====================
+function drawFornacella1(x, y, fc) {
+  const s = 3;
+  px(x + s, y - s, s, 2*s, '#555');
+  px(x + 4*s, y, s, s, '#555');
+  px(x + 7*s, y - s, s, 2*s, '#555');
+  px(x, y - 2*s, 9*s, s, '#666');
+  px(x, y - 7*s, 9*s, 5*s, '#777');
+  px(x + s, y - 7*s, 7*s, 5*s, '#888');
+  px(x, y - 7*s, 9*s, s, '#999');
+  for (let i = 1; i < 8; i += 2) px(x + i*s, y - 7*s, s, s, '#aaa');
+  px(x + s, y - 6*s, 7*s, s, '#aa2200');
+  px(x + 2*s, y - 5*s, 5*s, s, '#cc3300');
+  const fl = fc % 12 < 6;
+  px(x + 2*s, y - 8*s, s, s, fl ? '#ff6600' : '#ff4400');
+  px(x + 4*s, y - 9*s, s, s, fl ? '#ffcc00' : '#ff8800');
+  px(x + 6*s, y - 8*s, s, s, fl ? '#ff8800' : '#ff5500');
+  px(x + 3*s, y - 10*s, s, s, fl ? '#ffdd00' : '#ff9900');
+  px(x + 5*s, y - 8*s, 2*s, s, fl ? '#ff5500' : '#ff3300');
+}
+
+function drawFornacella2(x, y, fc) {
+  const s = 3;
+  px(x + s, y, s, 2*s, '#555');
+  px(x + 8*s, y, s, 2*s, '#555');
+  px(x, y - 8*s, 10*s, 7*s, '#666');
+  px(x + s, y - 8*s, 8*s, 7*s, '#777');
+  px(x + 2*s, y - 7*s, 6*s, 5*s, '#888');
+  px(x + s, y - 9*s, 8*s, s, '#999');
+  const fl = fc % 10 < 5;
+  px(x + 2*s, y - 10*s, 2*s, s, fl ? '#ff5500' : '#ff3300');
+  px(x + 5*s, y - 11*s, 2*s, s, fl ? '#ffcc00' : '#ff8800');
+  px(x + 3*s, y - 12*s, s, s, fl ? '#ffdd00' : '#ffaa00');
+  px(x + 6*s, y - 10*s, s, s, fl ? '#ff6600' : '#ff4400');
+  px(x + 4*s, y - 11*s, s, s, fl ? '#ff9900' : '#ff5500');
+  px(x + 2*s, y - 9*s, 6*s, s, '#8a3020');
+  px(x + 3*s, y - 9*s, 2*s, s, '#aa4030');
+  px(x + 6*s, y - 9*s, s, s, '#aa4030');
+}
+
+function drawFornacellaConArrostitori(x, y, fc) {
+  const s = 3;
+  // Person grilling behind
+  const px2 = x + 2*s, py = y - 3*s;
+  ctx.fillStyle = '#d4a574';
+  ctx.fillRect(px2 + 2*s, py - 18*s, 3*s, 3*s);
+  ctx.fillStyle = '#111';
+  ctx.fillRect(px2 + 3*s, py - 17*s, s, s);
+  ctx.fillStyle = '#eee';
+  ctx.fillRect(px2 + s, py - 15*s, 5*s, 6*s);
+  ctx.fillStyle = '#ddd';
+  ctx.fillRect(px2 + 2*s, py - 15*s, 3*s, 6*s);
+  ctx.fillStyle = '#cc0000';
+  ctx.fillRect(px2 + s, py - 13*s, 5*s, s);
+  ctx.fillStyle = '#d4a574';
+  ctx.fillRect(px2, py - 14*s, s, 3*s);
+  ctx.fillRect(px2 + 6*s, py - 14*s, s, 3*s);
+  ctx.fillStyle = '#888';
+  ctx.fillRect(px2 + 6*s, py - 11*s, s, 3*s);
+  ctx.fillRect(px2 + 7*s, py - 10*s, s, 2*s);
+  ctx.fillStyle = '#333';
+  ctx.fillRect(px2 + 2*s, py - 9*s, 2*s, 5*s);
+  ctx.fillRect(px2 + 4*s, py - 9*s, 2*s, 5*s);
+  ctx.fillStyle = '#222';
+  ctx.fillRect(px2 + s, py - 4*s, 2*s, s);
+  ctx.fillRect(px2 + 4*s, py - 4*s, 2*s, s);
+
+  // Fornacella in front
+  ctx.fillStyle = '#555';
+  ctx.fillRect(x + s, y - s, s, 2*s);
+  ctx.fillRect(x + 4*s, y, s, s);
+  ctx.fillRect(x + 7*s, y - s, s, 2*s);
+  ctx.fillStyle = '#777';
+  ctx.fillRect(x, y - 6*s, 9*s, 5*s);
+  ctx.fillStyle = '#888';
+  ctx.fillRect(x + s, y - 6*s, 7*s, 5*s);
+  ctx.fillStyle = '#999';
+  ctx.fillRect(x, y - 6*s, 9*s, s);
+  ctx.fillStyle = '#cc3300';
+  ctx.fillRect(x + s, y - 5*s, 7*s, s);
+  ctx.fillStyle = '#8a2020';
+  ctx.fillRect(x + s, y - 7*s, 2*s, s);
+  ctx.fillStyle = '#9a3030';
+  ctx.fillRect(x + 4*s, y - 7*s, 2*s, s);
+  ctx.fillStyle = '#7a2828';
+  ctx.fillRect(x + 7*s, y - 7*s, s, s);
+  ctx.fillStyle = '#aa4030';
+  ctx.fillRect(x + 2*s, y - 7*s, s, s);
+  ctx.fillRect(x + 5*s, y - 7*s, s, s);
+  const fl = fc % 14;
+  ctx.fillStyle = 'rgba(200,200,200,0.4)';
+  ctx.fillRect(x + 2*s, y - 8*s - (fl % 4) * s, s, s);
+  ctx.fillRect(x + 5*s, y - 9*s - (fl % 3) * s, s, s);
+  ctx.fillRect(x + 3*s, y - 10*s - (fl % 5) * s, s, s);
+  const f2 = fc % 10 < 5;
+  ctx.fillStyle = f2 ? '#ff6600' : '#ff4400';
+  ctx.fillRect(x + 3*s, y - 8*s, s, s);
+  ctx.fillStyle = f2 ? '#ffcc00' : '#ff8800';
+  ctx.fillRect(x + 6*s, y - 8*s, s, s);
+}
+
+// ==================== VIDEO / INTRO ====================
+const introVideo = document.getElementById('introVideo');
+const skipBtn = document.getElementById('skipBtn');
+introVideo.src = 'intro.mp4';
+let introWatched = localStorage.getItem('cavalloIntroWatched') === '1';
+let afterVideoTarget = 'menu'; // 'menu' or 'playing'
+
+const videoBg = document.getElementById('videoBg');
+
+function playIntro(afterDone) {
+  afterVideoTarget = afterDone;
+  videoBg.style.display = 'block';
+  introVideo.style.display = 'block';
+  skipBtn.style.display = 'block';
+  introVideo.currentTime = 0;
+  introVideo.play().catch(() => { endIntro(); });
+}
+
+const creditsOverlay = document.getElementById('creditsOverlay');
+const creditsCloseBtn = document.getElementById('creditsCloseBtn');
+
+function endIntro() {
+  introVideo.pause();
+  introVideo.style.display = 'none';
+  skipBtn.style.display = 'none';
+  videoBg.style.display = 'none';
+  if (afterVideoTarget === 'playing') {
+    introWatched = true;
+    localStorage.setItem('cavalloIntroWatched', '1');
+    gameState = 'playing';
+    resetGame();
+    AudioManager.playMusic('game');
+  } else {
+    creditsOverlay.classList.add('show');
+  }
+}
+
+creditsCloseBtn.addEventListener('click', () => {
+  creditsOverlay.classList.remove('show');
+  gameState = 'menu';
+});
+
+// ==================== NICKNAME OVERLAY ====================
+const nicknameOverlay = document.getElementById('nicknameOverlay');
+const nicknameInput = document.getElementById('nicknameInput');
+const nicknameBtn = document.getElementById('nicknameBtn');
+
+let nicknameAction = 'play'; // 'play' or 'change'
+
+function confirmNickname() {
+  const val = nicknameInput.value.trim();
+  if (!val) return;
+  playerNickname = val;
+  localStorage.setItem('cavalloNickname', playerNickname);
+  nicknameOverlay.classList.remove('show');
+  if (nicknameAction === 'change') {
+    gameState = 'menu';
+    return;
+  }
+  if (!introWatched) {
+    playIntro('playing');
+  } else {
+    ScreenFade.start('out-in', 30, () => { gameState = 'playing'; resetGame(); AudioManager.playMusic('game'); });
+  }
+}
+
+nicknameBtn.addEventListener('click', confirmNickname);
+nicknameInput.addEventListener('keydown', (e) => {
+  if (e.code === 'Enter') confirmNickname();
+});
+
+// ==================== LEADERBOARD FETCH / SUBMIT ====================
+function fetchLeaderboard() {
+  if (LEADERBOARD_URL === 'YOUR_APPS_SCRIPT_URL_HERE') return;
+  leaderboardLoading = true;
+  fetch(LEADERBOARD_URL + '?action=get')
+    .then(r => r.json())
+    .then(data => { leaderboardData = data; leaderboardLoading = false; })
+    .catch(() => { leaderboardLoading = false; });
+}
+
+function submitScore(nickname, s) {
+  if (LEADERBOARD_URL === 'YOUR_APPS_SCRIPT_URL_HERE') return;
+  scoreSubmitted = true;
+  fetch(LEADERBOARD_URL + '?action=submit&nickname=' + encodeURIComponent(nickname) + '&score=' + s)
+    .then(r => r.json())
+    .then(data => { leaderboardData = data; })
+    .catch(() => {});
+}
+
+introVideo.addEventListener('ended', endIntro);
+introVideo.addEventListener('click', endIntro);
+skipBtn.addEventListener('click', (e) => { e.stopPropagation(); endIntro(); });
+
+// PHASE 04: #resetBtn hidden — dev reset now via 3-second long-press on menu canvas
+// document.getElementById('resetBtn').addEventListener('click', () => { ... });
+
+// Dev reset function — all localStorage cleared + page reload
+function devReset() {
+  localStorage.removeItem('cavalloHighScore');
+  localStorage.removeItem('cavalloIntroWatched');
+  localStorage.removeItem('cavalloRecipes');
+  localStorage.removeItem('cavalloNickname');
+  location.reload();
+}
+
+// Long-press gesture: 3 seconds on menu canvas triggers dev reset confirmation
+let _devPressTimer = null;
+
+canvas.addEventListener('mousedown', (e) => {
+  if (gameState !== 'menu') return;
+  _devPressTimer = setTimeout(() => { if (gameState === 'menu' && confirm('DEV Reset?')) devReset(); }, 3000);
+});
+canvas.addEventListener('mouseup', () => clearTimeout(_devPressTimer));
+canvas.addEventListener('mouseleave', () => clearTimeout(_devPressTimer));
+
+canvas.addEventListener('touchstart', (e) => {
+  if (gameState !== 'menu') return;
+  _devPressTimer = setTimeout(() => { if (gameState === 'menu' && confirm('DEV Reset?')) devReset(); }, 3000);
+}, { passive: true });
+canvas.addEventListener('touchend', () => clearTimeout(_devPressTimer));
+canvas.addEventListener('touchmove', () => clearTimeout(_devPressTimer));
+
+const horse = {
+  x: 160,
+  y: GROUND_Y,
+  width: HORSE_W,
+  height: HORSE_H,
+  vy: 0,
+  jumping: false,
+  grounded: true,
+};
+
+let obstacles = [];
+let groundOffset = 0;
+
+// Menu button rects (will be set in drawMenu based on canvas size)
+let btnPlay = { x: 0, y: 0, w: 0, h: 0 };
+let btnIntro = { x: 0, y: 0, w: 0, h: 0 };
+
+// ==================== GAMIFICATION ====================
+let arancini = [];           // collectible arancini on screen
+let aranciniCollected = 0;   // total collected this run
+let streak = 0;              // consecutive obstacles dodged
+let bestStreak = 0;          // best streak this run
+let multiplier = 1;          // score multiplier from streak
+let recordBroken = false;    // has the record been broken this run?
+let recordFlashTimer = 0;    // flash effect timer
+
+// Floating text popups
+let floatingTexts = [];      // { text, x, y, life, color, size }
+
+// Catanese rank titles
+const RANKS = [
+  { score: 0,    title: 'PICCIRIDDU' },
+  { score: 200,  title: 'PICCIOTTO' },
+  { score: 500,  title: 'GUAPPO' },
+  { score: 1000, title: "UOMO D'ONORE" },
+  { score: 2000, title: 'PADRINO' },
+  { score: 4000, title: 'RE DI CATANIA' },
+];
+let currentRank = '';
+let rankUpTimer = 0;
+
+// ==================== SCORE PULSE & RANK CELEBRATION ====================
+let scorePulseTimer = 0;       // counts down from 8 when score pulses
+let lastDisplayedScore = 0;    // tracks last score milestone for 100-pt pulse
+let rankCelebrationTimer = 0;  // counts down from 60 (1 second at 60fps)
+let rankCelebrationTitle = ''; // rank title for the banner
+// 6 celebration particles for rank-up burst effect
+const RANK_PARTICLES = Array.from({ length: 6 }, () => ({
+  x: 0, y: 0, vx: 0, vy: 0, color: '#ffdd33', alpha: 0
+}));
+const RANK_BURST_COLORS = ['#ffdd33', '#00ffcc', '#ff4400', '#ff88cc', '#88ffaa', '#ffaa44'];
+
+// ==================== BOSS: U LIOTRU ====================
+let boss = null;          // oggetto boss attivo (null = nessun boss)
+let bossHits = 0;         // colpi inflitti
+let bossHP = 3;           // HP totali
+let bossLavaTimer = 0;    // timer per lancio lava
+let bossDefeated = 0;     // quanti boss sconfitti (per calcolo prossimo trigger)
+let bossLavas = [];       // array proiettili lava
+let bossFlashTimer = 0;   // flash feedback quando colpito
+let bossIntroTimer = 0;   // timer per testo "U LIOTRU!!!"
+
+// ==================== RECIPES ====================
+const RECIPES = [
+  { id: 'arancino', name: 'Arancino al Ragù', minScore: 10, maxScore: 1000,
+    desc: 'Riso, ragù di carne, piselli, mozzarella.',
+    steps: 'Cuoci il riso al dente e condiscilo col ragù. Forma delle palle, metti dentro mozzarella e piselli, impana e friggi in olio bollente fino a doratura.' },
+  { id: 'norma', name: 'Pasta alla Norma', minScore: 1000, maxScore: 2000,
+    desc: 'Maccheroni, melanzane fritte, pomodoro, ricotta salata.',
+    steps: 'Friggi le melanzane a fette. Cuoci la pasta e condisci con salsa di pomodoro fresco, basilico, melanzane fritte e ricotta salata grattugiata sopra.' },
+  { id: 'granita', name: 'Granita con Brioche', minScore: 2000, maxScore: 3500,
+    desc: 'Granita di mandorla o gelsi con brioche col tuppo.',
+    steps: 'Frulla mandorle pelate con acqua e zucchero, filtra e congela mescolando ogni 30 min. Servi in bicchiere con brioche col tuppo per inzuppare.' },
+  { id: 'cannolo', name: 'Cannolo Siciliano', minScore: 3500, maxScore: 5000,
+    desc: 'Cialda croccante, ricotta, gocce di cioccolato.',
+    steps: 'Prepara la cialda con farina, strutto e marsala, avvolgila sui tubi e friggi. Riempi con ricotta di pecora setacciata, zucchero e gocce di cioccolato.' },
+  { id: 'caponata', name: 'Caponata', minScore: 5000, maxScore: 7000,
+    desc: 'Melanzane, sedano, olive, capperi in agrodolce.',
+    steps: 'Friggi le melanzane a cubetti. In padella cuoci sedano, olive e capperi con salsa di pomodoro, aceto e zucchero. Unisci le melanzane e lascia insaporire.' },
+  { id: 'cartocciata', name: 'Cartocciata', minScore: 7000, maxScore: 9500,
+    desc: 'Pasta brioche farcita con prosciutto, mozzarella, pomodoro.',
+    steps: 'Stendi la pasta brioche, farcisci con prosciutto cotto, mozzarella e pomodoro. Chiudi a cartoccio, spennella con uovo e inforna a 180 gradi per 25 min.' },
+  { id: 'cipollina', name: 'Cipollina Catanese', minScore: 9500, maxScore: 12000,
+    desc: 'Sfoglia ripiena di cipolle, prosciutto, mozzarella.',
+    steps: 'Stufà le cipolle con olio e un pizzico di zucchero. Stendi la sfoglia, farcisci con cipolle, prosciutto e mozzarella. Arrotola, spennella con uovo e inforna.' },
+  { id: 'crispelle', name: 'Crispelle di Riso', minScore: 12000, maxScore: 15000,
+    desc: 'Frittelle di riso con miele, tipiche di San Giuseppe.',
+    steps: 'Cuoci il riso nel latte con scorza d\'arancia. Fai raffreddare, forma delle frittelle e friggi in olio bollente. Scola e condisci con miele caldo.' },
+  { id: 'pesce_spada', name: 'Involtini di Pesce Spada', minScore: 15000, maxScore: 18000,
+    desc: 'Pesce spada, pangrattato, pinoli, uvetta, alloro.',
+    steps: 'Batti le fette di pesce spada sottili. Farcisci con pangrattato tostato, pinoli, uvetta e prezzemolo. Arrotola con foglia d\'alloro e griglia alla brace.' },
+  { id: 'sarde', name: 'Pasta con le Sarde', minScore: 20000, maxScore: 21000,
+    desc: 'Bucatini, sarde, finocchietto selvatico, pinoli, uvetta.',
+    steps: 'Lessà il finocchietto selvatico e tienilo da parte. Cuoci le sarde in padella con cipolla, pinoli, uvetta e zafferano. Condisci i bucatini e inforna 5 min.' },
+];
+let unlockedRecipes = JSON.parse(localStorage.getItem('cavalloRecipes') || '[]');
+let recipeUnlockTargets = []; // random score targets for this run
+
+let btnRecipes = { x: 0, y: 0, w: 0, h: 0 };
+let btnRecipesBack = { x: 0, y: 0, w: 0, h: 0 };
+let btnRecipesPrev = { x: 0, y: 0, w: 0, h: 0 };
+let btnRecipesNext = { x: 0, y: 0, w: 0, h: 0 };
+
+function addFloatingText(text, x, y, color, size) {
+  floatingTexts.push({ text, x, y, life: 60, color: color || '#ffcc00', size: size || 16 });
+}
+
+function getCurrentRank() {
+  let r = RANKS[0].title;
+  for (const rank of RANKS) {
+    if (score >= rank.score) r = rank.title;
+  }
+  return r;
+}
+
+function drawArancino(ax, ay) {
+  const s = 2;
+  // Golden fried rice ball shape
+  ctx.fillStyle = '#d4880a';
+  ctx.fillRect(ax + 2*s, ay, 4*s, s);
+  ctx.fillRect(ax + s, ay + s, 6*s, s);
+  ctx.fillRect(ax, ay + 2*s, 8*s, 4*s);
+  ctx.fillRect(ax + s, ay + 6*s, 6*s, s);
+  ctx.fillRect(ax + 2*s, ay + 7*s, 4*s, s);
+  // Highlight
+  ctx.fillStyle = '#e8a830';
+  ctx.fillRect(ax + 2*s, ay + 2*s, 3*s, 2*s);
+  ctx.fillRect(ax + s, ay + 3*s, 2*s, s);
+  // Bright spot
+  ctx.fillStyle = '#f0c848';
+  ctx.fillRect(ax + 2*s, ay + 2*s, s, s);
+  // Shadow
+  ctx.fillStyle = '#b06808';
+  ctx.fillRect(ax + 4*s, ay + 4*s, 3*s, 2*s);
+  ctx.fillRect(ax + 3*s, ay + 6*s, 3*s, s);
+  // Sparkle
+  if (frameCount % 20 < 10) {
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(ax - s, ay + s, s, s);
+    ctx.fillRect(ax + 7*s, ay - s, s, s);
+  }
+}
+
+// ==================== BOSS SPRITE: U LIOTRU ====================
+function drawLiotru(x, y, frame) {
+  const s = 6;
+  const flash = bossFlashTimer > 0 && bossFlashTimer % 4 < 2;
+  const stone1 = flash ? '#ffffff' : '#696969';
+  const stone2 = flash ? '#eeeeee' : '#808080';
+  const stone3 = flash ? '#dddddd' : '#a0a0a0';
+  const stoneHi = flash ? '#ffffff' : '#b0b0b0';
+  const stoneDk = flash ? '#cccccc' : '#555555';
+  const tuskC = flash ? '#ffffff' : '#f0e8d0';
+  const eyeC = '#ff0000';
+  const trunkAnim = frame === 0 ? 0 : s;
+
+  // --- BODY (large rectangular torso) ---
+  for (let i = 0; i < 16; i++) {
+    const shade = i < 4 ? stone2 : i < 12 ? stone1 : stone3;
+    px(x + i*s, y - 18*s, s, 10*s, shade);
+  }
+  // Belly highlight
+  for (let i = 4; i < 12; i++) {
+    px(x + i*s, y - 10*s, s, 2*s, stoneHi);
+  }
+  // Back line
+  for (let i = 1; i < 15; i++) {
+    px(x + i*s, y - 18*s, s, s, stoneDk);
+  }
+
+  // --- 4 LEGS (thick, stumpy) ---
+  // Back-left
+  px(x + s, y - 8*s, 3*s, 6*s, stone2);
+  px(x + s, y - 2*s, 3*s, 2*s, stoneDk);
+  // Back-right
+  px(x + 5*s, y - 8*s, 3*s, 6*s, stone1);
+  px(x + 5*s, y - 2*s, 3*s, 2*s, stoneDk);
+  // Front-left
+  px(x + 9*s, y - 8*s, 3*s, 6*s, stone2);
+  px(x + 9*s, y - 2*s, 3*s, 2*s, stoneDk);
+  // Front-right
+  px(x + 13*s, y - 8*s, 3*s, 6*s, stone1);
+  px(x + 13*s, y - 2*s, 3*s, 2*s, stoneDk);
+
+  // --- HEAD ---
+  px(x + 14*s, y - 22*s, 6*s, 6*s, stone2);
+  px(x + 15*s, y - 23*s, 4*s, 2*s, stone3);
+  // Forehead
+  px(x + 15*s, y - 22*s, 4*s, 3*s, stoneHi);
+
+  // --- EARS ---
+  px(x + 14*s, y - 24*s, 2*s, 3*s, stone1);
+  px(x + 19*s, y - 24*s, 2*s, 3*s, stone1);
+  px(x + 14*s, y - 23*s, s, 2*s, '#9a7070');
+  px(x + 20*s, y - 23*s, s, 2*s, '#9a7070');
+
+  // --- EYES (red when attacking) ---
+  px(x + 16*s, y - 21*s, 2*s, s, eyeC);
+  px(x + 18*s, y - 21*s, s, s, eyeC);
+  // Pupils
+  px(x + 17*s, y - 21*s, s, s, '#440000');
+
+  // --- TRUNK (animated) ---
+  px(x + 17*s, y - 16*s, 2*s, 3*s, stone2);
+  px(x + 18*s, y - 13*s + trunkAnim, 2*s, 3*s, stone3);
+  px(x + 19*s, y - 10*s + trunkAnim, 2*s, 2*s, stone2);
+  px(x + 19*s, y - 8*s + trunkAnim, s, 2*s, stoneHi);
+
+  // --- TUSKS (white, curved) ---
+  px(x + 16*s, y - 17*s, s, 4*s, tuskC);
+  px(x + 15*s, y - 14*s, s, 2*s, tuskC);
+  px(x + 20*s, y - 17*s, s, 4*s, tuskC);
+  px(x + 21*s, y - 14*s, s, 2*s, tuskC);
+
+  // --- TAIL ---
+  const tailW = frame === 0 ? 1 : -1;
+  px(x - s, y - 16*s, s, 3*s, stoneDk);
+  px(x - 2*s, y - 14*s + tailW, s, 2*s, stone2);
+  px(x - 3*s, y - 13*s + tailW, s, s, stone1);
+
+  // --- HP BAR above boss ---
+  const barX = x + 2*s;
+  const barY = y - 27*s;
+  for (let i = 0; i < bossHP; i++) {
+    const filled = i < (bossHP - bossHits);
+    ctx.fillStyle = filled ? '#ff2222' : '#444444';
+    ctx.fillRect(barX + i * 36, barY, 30, 12);
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(barX + i * 36, barY, 30, 12);
+  }
+}
+
+function drawLava(lx, ly) {
+  const s = 2;
+  // Main lava block
+  ctx.fillStyle = '#cc2200';
+  ctx.fillRect(lx, ly - 10*s, 10*s, 10*s);
+  ctx.fillStyle = '#ff4400';
+  ctx.fillRect(lx + s, ly - 9*s, 8*s, 8*s);
+  ctx.fillStyle = '#ff6600';
+  ctx.fillRect(lx + 2*s, ly - 8*s, 6*s, 5*s);
+  ctx.fillStyle = '#ff8800';
+  ctx.fillRect(lx + 3*s, ly - 7*s, 4*s, 3*s);
+  // Bright core
+  ctx.fillStyle = '#ffaa00';
+  ctx.fillRect(lx + 4*s, ly - 6*s, 2*s, 2*s);
+  // Particles
+  if (frameCount % 6 < 3) {
+    ctx.fillStyle = '#ffcc00';
+    ctx.fillRect(lx - s, ly - 11*s, s, s);
+    ctx.fillRect(lx + 9*s, ly - 12*s, s, s);
+    ctx.fillStyle = '#ff5500';
+    ctx.fillRect(lx + 2*s, ly - 12*s, s, s);
+  } else {
+    ctx.fillStyle = '#ff6600';
+    ctx.fillRect(lx + s, ly - 12*s, s, s);
+    ctx.fillRect(lx + 8*s, ly - 11*s, s, s);
+  }
+}
+
+// ==================== OBSTACLE SPAWN ====================
+const OBS_TYPES = {
+  // w/h = sprite dimensions (for rendering); hitW/hitH = 75% for collision
+  fornacella1:     { type: 'fornacella1',     w: 27, h: 36, hitW: 20, hitH: 27 },
+  fornacella2:     { type: 'fornacella2',     w: 30, h: 40, hitW: 23, hitH: 30 },
+  fornacellaGrill: { type: 'fornacellaGrill', w: 36, h: 60, hitW: 27, hitH: 45 },
+  mafColtello:     { type: 'mafColtello',     w: 33, h: 63, hitW: 25, hitH: 47 },
+  mafLupara:       { type: 'mafLupara',       w: 36, h: 72, hitW: 27, hitH: 54 },
+  mafFornacella:   { type: 'mafFornacella',   w: 33, h: 84, hitW: 25, hitH: 63 },
+};
+
+const OBS_POOLS = {
+  early: [
+    { type: 'fornacella1', weight: 3 },
+    { type: 'fornacella2', weight: 2 }
+  ],
+  mid: [
+    { type: 'fornacella1', weight: 2 },
+    { type: 'fornacella2', weight: 2 },
+    { type: 'fornacellaGrill', weight: 2 },
+    { type: 'mafColtello', weight: 1 }
+  ],
+  late: [
+    { type: 'fornacella1', weight: 1 },
+    { type: 'fornacella2', weight: 1 },
+    { type: 'fornacellaGrill', weight: 2 },
+    { type: 'mafColtello', weight: 2 },
+    { type: 'mafLupara', weight: 1 },
+    { type: 'mafFornacella', weight: 1 }
+  ]
+};
+
+function getObstaclePool(s) {
+  if (s < 1000) return OBS_POOLS.early;
+  if (s < 5000) return OBS_POOLS.mid;
+  return OBS_POOLS.late;
+}
+
+function pickRandomObs() {
+  const pool = getObstaclePool(score);
+  const totalWeight = pool.reduce((sum, item) => sum + item.weight, 0);
+  let r = Math.random() * totalWeight;
+  for (const item of pool) {
+    r -= item.weight;
+    if (r <= 0) return OBS_TYPES[item.type];
+  }
+  return OBS_TYPES[pool[0].type];
+}
+
+let nextSpawnInterval = 80; // frames until next spawn
+
+function pickNextInterval() {
+  // Adaptive spawn: interval scales inversely with speed
+  const speedFactor = speed / 5.0;
+  const base = Math.max(Math.floor(45 / speedFactor), 30);
+  const variance = Math.max(90 - Math.floor(score / 500), 40);
+
+  let min = base;
+  let max = base + variance;
+
+  // Grace period post-boss: increase intervals
+  if (postBossGracePeriod > 0) {
+    min += 20;
+    max += 40;
+  }
+
+  // 15% chance of breather gap
+  if (Math.random() < 0.15) {
+    return min + max + Math.floor(Math.random() * 50);
+  }
+  return min + Math.floor(Math.random() * (max - min));
+}
+
+function shouldSpawnCluster() {
+  // Continuous growth, no cap
+  const baseClusterChance = 0.08 + (score / 25000);
+  // Forced breather every 12 obstacles
+  const BREATHER_INTERVAL = 12;
+  if (obstaclesSinceLastBreather >= BREATHER_INTERVAL) return false;
+  // Reduce chance if many recent clusters
+  const penalty = Math.min(obstaclesSinceLastBreather / BREATHER_INTERVAL, 1.0);
+  return Math.random() < baseClusterChance * penalty;
+}
+
+function spawnObstacle() {
+  const doCluster = shouldSpawnCluster();
+
+  const o = pickRandomObs();
+  if (doCluster) {
+    const count = Math.random() < 0.3 + score / 30000 ? 3 : 2;
+    let xOff = canvas.width + 20;
+    for (let i = 0; i < count; i++) {
+      const gap = Math.floor(Math.random() * 10) + 4;
+      obstacles.push({ type: o.type, x: xOff, y: GROUND_Y, width: o.w, height: o.h, hitW: o.hitW, hitH: o.hitH });
+      xOff += o.w + gap;
+    }
+    obstaclesSinceLastBreather = 0;
+  } else {
+    obstacles.push({ type: o.type, x: canvas.width + 20, y: GROUND_Y, width: o.w, height: o.h, hitW: o.hitW, hitH: o.hitH });
+    obstaclesSinceLastBreather++;
+  }
+}
+
+// ==================== INPUT ====================
+let jumpPressed = false;
+
+function getCanvasPos(e) {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  const cx = e.clientX || (e.touches && e.touches[0] && e.touches[0].clientX) || 0;
+  const cy = e.clientY || (e.touches && e.touches[0] && e.touches[0].clientY) || 0;
+  return { x: (cx - rect.left) * scaleX, y: (cy - rect.top) * scaleY };
+}
+
+function hitTest(pos, btn) {
+  return pos.x >= btn.x && pos.x <= btn.x + btn.w && pos.y >= btn.y && pos.y <= btn.y + btn.h;
+}
+
+// "Cambia" nickname click area
+let btnChangeNick = { x: 0, y: 0, w: 0, h: 0 };
+
+function handleMenuClick(pos) {
+  if (hitTest(pos, btnPlay)) {
+    if (!playerNickname) {
+      nicknameAction = 'play';
+      nicknameOverlay.classList.add('show');
+      nicknameInput.value = '';
+      nicknameInput.focus();
+      return;
+    }
+    if (!introWatched) {
+      playIntro('playing');
+    } else {
+      ScreenFade.start('out-in', 30, () => { gameState = 'playing'; resetGame(); AudioManager.playMusic('game'); });
+    }
+  } else if (hitTest(pos, btnLeaderboard)) {
+    gameState = 'leaderboard';
+    fetchLeaderboard();
+  } else if (hitTest(pos, btnRecipes)) {
+    gameState = 'recipes';
+  } else if (hitTest(pos, btnIntro)) {
+    playIntro('menu');
+  } else if (playerNickname && hitTest(pos, btnChangeNick)) {
+    nicknameAction = 'change';
+    nicknameOverlay.classList.add('show');
+    nicknameInput.value = playerNickname;
+    nicknameInput.focus();
+  }
+}
+
+// Home button rect (drawn on canvas during gameplay)
+let btnHome = { x: 0, y: 0, w: 0, h: 0 };
+// Mute button rect (drawn on canvas during gameplay, left of home button)
+let btnMute = { x: 0, y: 0, w: 0, h: 0 };
+
+function onJump() {
+  if (ScreenFade.active) return;
+  if (gameState === 'gameover') {
+    ScreenFade.start('out-in', 25, () => { gameState = 'playing'; resetGame(); AudioManager.playMusic('game'); });
+    return;
+  }
+  if (gameState === 'playing' && horse.grounded) {
+    horse.vy = JUMP_FORCE;
+    horse.jumping = true;
+    horse.grounded = false;
+    AudioManager.play('jump');
+  }
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.code === 'Space' || e.code === 'ArrowUp') {
+    e.preventDefault();
+    if (gameState === 'menu') {
+      if (!playerNickname) {
+        nicknameAction = 'play';
+        nicknameOverlay.classList.add('show');
+        nicknameInput.value = '';
+        nicknameInput.focus();
+        return;
+      }
+      if (!introWatched) { playIntro('playing'); }
+      else { ScreenFade.start('out-in', 30, () => { gameState = 'playing'; resetGame(); AudioManager.playMusic('game'); }); }
+      return;
+    }
+    if (!jumpPressed) { jumpPressed = true; onJump(); }
+  }
+  if (e.code === 'Escape' && (gameState === 'playing' || gameState === 'gameover' || gameState === 'recipes' || gameState === 'leaderboard')) {
+    AudioManager.stopMusic();
+    gameState = 'menu';
+  }
+});
+document.addEventListener('keyup', (e) => {
+  if (e.code === 'Space' || e.code === 'ArrowUp') jumpPressed = false;
+});
+
+canvas.addEventListener('mousemove', (e) => {
+  if (gameState !== 'menu') { menuHover = ''; return; }
+  const pos = getCanvasPos(e);
+  if (hitTest(pos, btnPlay)) menuHover = 'play';
+  else if (hitTest(pos, btnLeaderboard)) menuHover = 'leaderboard';
+  else if (hitTest(pos, btnRecipes)) menuHover = 'recipes';
+  else if (hitTest(pos, btnIntro)) menuHover = 'intro';
+  else menuHover = '';
+});
+
+function handleGameClick(pos) {
+  // Check mute button (left of home button)
+  if ((gameState === 'playing' || gameState === 'gameover') && hitTest(pos, btnMute)) {
+    AudioManager.setMute(!AudioManager.isMuted());
+    return true;
+  }
+  // Check home button
+  if ((gameState === 'playing' || gameState === 'gameover') && hitTest(pos, btnHome)) {
+    AudioManager.stopMusic();
+    gameState = 'menu';
+    return true;
+  }
+  return false;
+}
+
+function handleRecipesClick(pos) {
+  const totalPages = Math.ceil(RECIPES.length / RECIPES_PER_PAGE);
+  const currentPage = Math.floor(recipesScroll / RECIPES_PER_PAGE);
+  if (hitTest(pos, btnRecipesBack)) { gameState = 'menu'; recipesScroll = 0; return; }
+  if (currentPage > 0 && hitTest(pos, btnRecipesPrev)) { recipesScroll -= RECIPES_PER_PAGE; return; }
+  if (currentPage < totalPages - 1 && hitTest(pos, btnRecipesNext)) { recipesScroll += RECIPES_PER_PAGE; return; }
+}
+
+function handleLeaderboardClick(pos) {
+  if (hitTest(pos, btnLeaderboardBack)) { gameState = 'menu'; return; }
+}
+
+canvas.addEventListener('mousedown', (e) => {
+  e.preventDefault();
+  if (gameState === 'menu') { handleMenuClick(getCanvasPos(e)); return; }
+  if (gameState === 'leaderboard') { handleLeaderboardClick(getCanvasPos(e)); return; }
+  if (gameState === 'recipes') { handleRecipesClick(getCanvasPos(e)); return; }
+  if (handleGameClick(getCanvasPos(e))) return;
+  onJump();
+});
+canvas.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  if (gameState === 'menu') { handleMenuClick(getCanvasPos(e)); return; }
+  if (gameState === 'leaderboard') { handleLeaderboardClick(getCanvasPos(e)); return; }
+  if (gameState === 'recipes') { handleRecipesClick(getCanvasPos(e)); return; }
+  if (handleGameClick(getCanvasPos(e))) return;
+  onJump();
+}, { passive: false });
+
+// Prevent scroll/zoom on mobile
+document.addEventListener('touchmove', (e) => { e.preventDefault(); }, { passive: false });
+document.addEventListener('gesturestart', (e) => { e.preventDefault(); });
+
+// ==================== GAME LOGIC ====================
+function resetGame() {
+  score = 0;
+  speed = baseSpeed;
+  horse.y = GROUND_Y;
+  horse.vy = 0;
+  horse.jumping = false;
+  horse.grounded = true;
+  obstacles = [];
+  frameCount = 0;
+  lastObstacleSpawn = 0;
+  // Gamification reset
+  arancini = [];
+  aranciniCollected = 0;
+  streak = 0;
+  bestStreak = 0;
+  multiplier = 1;
+  recordBroken = false;
+  recordFlashTimer = 0;
+  floatingTexts = [];
+  currentRank = RANKS[0].title;
+  rankUpTimer = 0;
+  scorePulseTimer = 0;
+  lastDisplayedScore = 0;
+  rankCelebrationTimer = 0;
+  rankCelebrationTitle = '';
+  scoreSubmitted = false;
+  // Boss reset
+  boss = null;
+  bossHits = 0;
+  bossLavas = [];
+  bossLavaTimer = 0;
+  bossDefeated = 0;
+  bossFlashTimer = 0;
+  bossIntroTimer = 0;
+  postBossGracePeriod = 0;
+  obstaclesSinceLastBreather = 0;
+  framesSinceLastArancino = 0;
+  // Generate random unlock score for each locked recipe (50% guaranteed, 50% range)
+  recipeUnlockTargets = [];
+  for (const r of RECIPES) {
+    if (!unlockedRecipes.includes(r.id)) {
+      const useGuaranteed = Math.random() < 0.5;
+      const guaranteedScores = { arancino: 500, norma: 1500, granita: 2500, cannolo: 4000, caponata: 6000, cartocciata: 8000, cipollina: 10500, crispelle: 13000, pesce_spada: 16000, sarde: 20000 };
+      const target = useGuaranteed && guaranteedScores[r.id]
+        ? guaranteedScores[r.id]
+        : r.minScore + Math.floor(Math.random() * (r.maxScore - r.minScore));
+      recipeUnlockTargets.push({ id: r.id, target });
+    }
+  }
+}
+
+let animTimer = 0;
+let spawnTimer = 0;
+
+function update(dt) {
+  ScreenFade.update(dt);
+  // Animate horse on menu screen too
+  if (gameState === 'menu') {
+    frameCount++;
+    animTimer += dt;
+    if (animTimer >= 8) { animTimer -= 8; animFrame = animFrame === 0 ? 1 : 0; }
+    // ParallaxBg.update(dt, 1.5); // PARALLAX DISABLED — Phase 04
+    return;
+  }
+  if (gameState !== 'playing') return;
+  frameCount++;
+
+  // Hybrid speed formula: log (early boost) + power (late-game control)
+  speed = baseSpeed + 1.8 * Math.log(1 + score / 600) + 0.4 * Math.pow(score / 2000, 0.65);
+
+  // Decrement post-boss grace period
+  if (postBossGracePeriod > 0) postBossGracePeriod -= dt * 60;
+
+  horse.vy += GRAVITY * dt;
+  horse.y += horse.vy * dt;
+  if (horse.y >= GROUND_Y) {
+    horse.y = GROUND_Y;
+    horse.vy = 0;
+    horse.jumping = false;
+    horse.grounded = true;
+    if (jumpPressed) {
+      horse.vy = JUMP_FORCE;
+      horse.jumping = true;
+      horse.grounded = false;
+    }
+  }
+
+  animTimer += dt;
+  if (animTimer >= 8) { animTimer -= 8; animFrame = animFrame === 0 ? 1 : 0; }
+
+  // Don't spawn obstacles during boss fight
+  if (!boss) {
+    spawnTimer += dt;
+    if (spawnTimer >= nextSpawnInterval) {
+      spawnObstacle();
+      spawnTimer = 0;
+      nextSpawnInterval = pickNextInterval();
+    }
+  }
+
+  groundOffset = (groundOffset + speed * dt) % 24;
+  // ParallaxBg.update(dt, speed); // PARALLAX DISABLED — Phase 04
+  score += Math.round(0.7 * dt);
+
+  // --- Score pulse: trigger every 100 points milestone ---
+  const scoreMilestone = Math.floor(score / 100);
+  if (scoreMilestone > Math.floor(lastDisplayedScore / 100)) {
+    scorePulseTimer = 8;
+  }
+  lastDisplayedScore = score;
+  if (scorePulseTimer > 0) scorePulseTimer -= dt;
+
+  // --- Horse hitbox (computed once, used for arancini + collision) ---
+  // Horse hitbox: 80% of sprite dimensions (44x62 vs 55x78), centered
+  const hx = horse.x + 6;       // offsetX = (55-44)/2 ≈ 6
+  const hy = horse.y - HORSE_H + 8; // offsetFromTop = (78-62)/2 ≈ 8
+  const hw = HORSE_W - 11;      // 55-11 = 44 (80% of 55)
+  const hh = HORSE_H - 16;      // 78-16 = 62 (80% of 78)
+  const hx2 = hx + hw;
+  const hy2 = hy + hh;
+
+  // --- Single pass: move obstacles + streak + collision ---
+  let obsLen = obstacles.length;
+  let writeIdx = 0;
+  for (let i = 0; i < obsLen; i++) {
+    const obs = obstacles[i];
+    obs.x -= speed * dt;
+    if (obs.x + obs.width < -50) continue; // skip dead, don't copy
+
+    // Streak / near miss
+    if (!obs.passed) {
+      const obsRight = obs.x + obs.width;
+      if (obs.x < horse.x + HORSE_W && obsRight > horse.x) {
+        const clearance = (obs.y - obs.height + 4) - (horse.y - 4);
+        if (clearance >= 0 && (obs.minClearance === undefined || clearance < obs.minClearance)) {
+          obs.minClearance = clearance;
+        }
+      }
+      if (obsRight < horse.x) {
+        obs.passed = true;
+        streak++;
+        if (streak > bestStreak) bestStreak = streak;
+        // Extended multiplier: logarithmic growth beyond streak 9
+        if (streak < 3) multiplier = 1;
+        else if (streak < 10) multiplier = 1 + Math.floor(streak / 3);
+        else multiplier = 4 + Math.floor(Math.log2((streak - 9) / 3 + 1));
+        if (obs.minClearance !== undefined && obs.minClearance < 22) {
+          // Near miss bonus scales with speed
+          const nearMissBase = 50 + Math.floor((speed - 5.0) * 8);
+          const bonus = nearMissBase * multiplier;
+          score += bonus;
+          addFloatingText('MINCHIA CHE CULO! +' + bonus, horse.x, horse.y - HORSE_H - 30, '#ff44ff', 15);
+        }
+        if (streak % 5 === 0) {
+          addFloatingText('STREAK x' + streak + '!', horse.x + 40, horse.y - HORSE_H - 15, '#00ff88', 14);
+        }
+      }
+    }
+
+    // Collision
+    if (gameState === 'playing') {
+      // Use hitW/hitH (75% of sprite) for collision, centered on sprite
+      const hitW = obs.hitW || obs.width;
+      const hitH = obs.hitH || obs.height;
+      const ox = obs.x + Math.floor((obs.width - hitW) / 2);
+      const oy = obs.y - obs.height + Math.floor((obs.height - hitH) / 2);
+      if (hx < ox + hitW && hx2 > ox && hy < oy + hitH && hy2 > oy) {
+        gameState = 'gameover';
+        AudioManager.stopMusic();
+        AudioManager.play('gameOver');
+        ScreenFade.start('in', 20);
+        streak = 0;
+        multiplier = 1;
+        if (score > highScore) {
+          highScore = score;
+          localStorage.setItem('cavalloHighScore', highScore);
+        }
+        if (playerNickname && !scoreSubmitted) {
+          submitScore(playerNickname, score);
+        }
+      }
+    }
+
+    obstacles[writeIdx++] = obs;
+  }
+  obstacles.length = writeIdx;
+
+  // --- Arancino spawn (contextual, not during boss) ---
+  framesSinceLastArancino++;
+  if (!boss) {
+    const arancinoInterval = 120 + Math.floor((speed - 5.0) * 15);
+    if (framesSinceLastArancino >= arancinoInterval && arancini.length < 3) {
+      const minH = 50 + Math.floor((speed - 5.0) * 5);
+      const maxH = 110 + Math.floor((speed - 5.0) * 8);
+      const h = minH + Math.random() * (maxH - minH);
+      arancini.push({ x: canvas.width + 10, y: GROUND_Y - h, w: 16, h: 16 });
+      framesSinceLastArancino = 0;
+    }
+  }
+
+  // --- Single pass: move arancini + collection ---
+  let aLen = arancini.length;
+  let aWrite = 0;
+  for (let i = 0; i < aLen; i++) {
+    const a = arancini[i];
+    a.x -= speed * dt;
+    if (a.x < -20) continue;
+    if (hx < a.x + a.w && hx2 > a.x && hy < a.y + a.h && hy2 > a.y) {
+      aranciniCollected++;
+      AudioManager.play('collect');
+      const bonus = 30 * multiplier;
+      score += bonus;
+      scorePulseTimer = 8; // pulse on arancino pickup (discrete event)
+      addFloatingText('ARANCINU! +' + bonus, a.x, a.y - 10, '#ffaa00', 14);
+      continue;
+    }
+    arancini[aWrite++] = a;
+  }
+  arancini.length = aWrite;
+
+  // --- Recipe unlock by score ---
+  let rLen = recipeUnlockTargets.length;
+  let rWrite = 0;
+  for (let i = 0; i < rLen; i++) {
+    const rt = recipeUnlockTargets[i];
+    if (score >= rt.target) {
+      const recipe = RECIPES.find(r => r.id === rt.id);
+      if (recipe && !unlockedRecipes.includes(rt.id)) {
+        unlockedRecipes.push(rt.id);
+        localStorage.setItem('cavalloRecipes', JSON.stringify(unlockedRecipes));
+        addFloatingText('RICETTA SBLOCCATA!', canvas.width / 2, 100, '#ffdd00', 18);
+        addFloatingText(recipe.name, canvas.width / 2, 122, '#ffcc88', 15);
+      }
+      continue;
+    }
+    recipeUnlockTargets[rWrite++] = rt;
+  }
+  recipeUnlockTargets.length = rWrite;
+
+  // --- Record break detection ---
+  if (!recordBroken && highScore > 0 && score > highScore) {
+    recordBroken = true;
+    recordFlashTimer = 90;
+    addFloatingText('NUOVO RECORD!!!', canvas.width / 2 - 60, 60, '#ffd700', 22);
+    addFloatingText('SEI NU GRANDE!', canvas.width / 2 - 50, 85, '#ff6633', 16);
+  }
+  if (recordFlashTimer > 0) recordFlashTimer -= dt;
+
+  // --- Rank tracking ---
+  const newRank = getCurrentRank();
+  if (newRank !== currentRank) {
+    if (currentRank !== '') {
+      rankUpTimer = 80;
+      // Enhanced rank-up celebration
+      rankCelebrationTimer = 60;
+      rankCelebrationTitle = newRank;
+      // Initialize burst particles around the banner area
+      const bannerCX = Math.floor(canvas.width / 2);
+      const bannerCY = 80;
+      for (let pi = 0; pi < RANK_PARTICLES.length; pi++) {
+        const angle = (pi / RANK_PARTICLES.length) * Math.PI * 2;
+        RANK_PARTICLES[pi].x = bannerCX + Math.cos(angle) * 40;
+        RANK_PARTICLES[pi].y = bannerCY;
+        RANK_PARTICLES[pi].vx = Math.cos(angle) * (2 + Math.random() * 2);
+        RANK_PARTICLES[pi].vy = Math.sin(angle) * (2 + Math.random() * 2) - 2;
+        RANK_PARTICLES[pi].color = RANK_BURST_COLORS[pi % RANK_BURST_COLORS.length];
+        RANK_PARTICLES[pi].alpha = 1;
+      }
+      addFloatingText('RANK UP: ' + newRank, canvas.width / 2, 150, '#00ffcc', 16);
+    }
+    currentRank = newRank;
+  }
+  if (rankUpTimer > 0) rankUpTimer -= dt;
+  if (rankCelebrationTimer > 0) rankCelebrationTimer -= dt;
+
+  // --- Floating texts update (swap-remove) ---
+  let fLen = floatingTexts.length;
+  let fWrite = 0;
+  for (let i = 0; i < fLen; i++) {
+    const ft = floatingTexts[i];
+    ft.y -= 0.8 * dt;
+    ft.life -= dt;
+    if (ft.life > 0) {
+      floatingTexts[fWrite++] = ft;
+    }
+  }
+  floatingTexts.length = fWrite;
+
+  // --- BOSS TRIGGER ---
+  if (score > 0 && Math.floor(score / 10000) > bossDefeated && !boss) {
+    // Logarithmic boss scaling
+    const bossNum = bossDefeated + 1;
+    boss = {
+      x: canvas.width + 50,
+      y: GROUND_Y,
+      w: 132,
+      h: 108,
+      entering: true,
+      targetX: canvas.width * 0.65,
+      phase: 'idle',
+      chargeTimer: 0,
+      chargeSpeed: 5.0 + 2.0 * Math.log(1 + bossNum * 0.8)
+    };
+    bossHits = 0;
+    bossLavas = [];
+    bossLavaTimer = 0;
+    bossFlashTimer = 0;
+    bossIntroTimer = 80;
+    addFloatingText('U LIOTRU!!!', canvas.width / 2, canvas.height / 2 - 40, '#ff4400', 32);
+    AudioManager.playMusic('boss');
+  }
+
+  // --- BOSS UPDATE ---
+  if (boss && gameState === 'playing') {
+    if (bossIntroTimer > 0) bossIntroTimer -= dt;
+    if (bossFlashTimer > 0) bossFlashTimer -= dt;
+
+    // Entering phase: walk in from right
+    if (boss.entering) {
+      boss.x -= 2.5 * dt;
+      if (boss.x <= boss.targetX) {
+        boss.x = boss.targetX;
+        boss.entering = false;
+        boss.phase = 'idle';
+        boss.chargeTimer = 0;
+      }
+    } else {
+      // Logarithmic lava interval: 130 - 15*bossNum, min 80
+      const bossNum = bossDefeated + 1;
+      const lavaInterval = Math.max(130 - bossNum * 15, 80);
+
+      if (boss.phase === 'idle') {
+        // Throw lava while waiting
+        bossLavaTimer += dt;
+        if (bossLavaTimer >= lavaInterval) {
+          bossLavaTimer = 0;
+          bossLavas.push({ x: boss.x - 10, y: GROUND_Y, w: 20, h: 20 });
+        }
+        // After a pause, charge! Logarithmic delay: 280 - 25*bossNum, min 180
+        boss.chargeTimer += dt;
+        const chargeDelay = Math.max(280 - bossNum * 25, 180);
+        if (boss.chargeTimer >= chargeDelay && bossLavas.length === 0) {
+          boss.phase = 'charging';
+          boss.chargeTimer = 0;
+        }
+      } else if (boss.phase === 'charging') {
+        // Rush toward the horse (move left)
+        boss.x -= boss.chargeSpeed * dt;
+        // Passed the horse? Stop and return
+        if (boss.x + boss.w < -20) {
+          boss.phase = 'returning';
+        }
+      } else if (boss.phase === 'returning') {
+        // Walk back to position from the right
+        boss.x += 3.5 * dt;
+        if (boss.x >= boss.targetX) {
+          boss.x = boss.targetX;
+          boss.phase = 'idle';
+          boss.chargeTimer = 0;
+          bossLavaTimer = 0;
+        }
+      }
+    }
+
+    // Move lavas
+    const lavaSpeed = 4;
+    let lLen = bossLavas.length;
+    let lWrite = 0;
+    for (let i = 0; i < lLen; i++) {
+      const lv = bossLavas[i];
+      lv.x -= lavaSpeed * dt;
+      if (lv.x + lv.w < -20) continue;
+      // Lava-horse collision
+      if (gameState === 'playing') {
+        // Lava hitbox: 60% of sprite (12x12 vs 20x20), centered
+        if (hx < lv.x + lv.w - 4 && hx2 > lv.x + 4 && hy < lv.y - 4 && hy2 > lv.y - lv.h + 4) {
+          gameState = 'gameover';
+          AudioManager.stopMusic();
+          AudioManager.play('gameOver');
+          ScreenFade.start('in', 20);
+          streak = 0; multiplier = 1;
+          if (score > highScore) { highScore = score; localStorage.setItem('cavalloHighScore', highScore); }
+          if (playerNickname && !scoreSubmitted) submitScore(playerNickname, score);
+        }
+      }
+      bossLavas[lWrite++] = lv;
+    }
+    bossLavas.length = lWrite;
+
+    // Horse-boss collision (only when boss is on screen and not entering)
+    if (gameState === 'playing' && !boss.entering) {
+      const bx1 = boss.x;
+      const bx2 = boss.x + boss.w;
+      // Boss hitbox: 75% of sprite (99x81 vs 132x108), centered
+      // Horizontal margins: 16 left, 17 right (total 33, 132-33=99)
+      // Vertical: headTop raised by 14 (offset = (108-81)/2 ≈ 14)
+      const bossHitX1 = bx1 + 16;
+      const bossHitX2 = bx2 - 17;
+      const headTop = boss.y - boss.h + 14;
+      const bossHitBottom = boss.y - 14;
+      const headZone = 45;
+
+      const overlapH = hx2 > bossHitX1 && hx < bossHitX2;
+      const overlapFull = hx2 > bossHitX1 && hx < bossHitX2;
+
+      // Horse landing on top (damage to boss)
+      if (horse.vy > 0 && overlapH &&
+          hy2 >= headTop && hy2 <= headTop + headZone) {
+        bossHits++;
+        AudioManager.play('bossHit');
+        horse.vy = JUMP_FORCE * 0.7;
+        horse.jumping = true;
+        horse.grounded = false;
+        bossFlashTimer = 15;
+        addFloatingText('BUMM! ' + bossHits + '/' + bossHP, boss.x + boss.w / 2, headTop - 10, '#ff8800', 18);
+
+        if (bossHits >= bossHP) {
+          boss = null;
+          bossDefeated++;
+          AudioManager.play('bossDefeated');
+          AudioManager.playMusic('game');
+          bossLavas = [];
+          score += 1000;
+          postBossGracePeriod = 500; // ~8 seconds of easier spawns
+          addFloatingText('LIOTRU SCONFITTO! +1000', canvas.width / 2, canvas.height / 2 - 30, '#00ff88', 24);
+        } else {
+          // Knockback: boss retreats after hit, clear lavas for safety
+          boss.phase = 'returning';
+          boss.x = canvas.width + 50;
+          bossLavas = [];
+        }
+      // Horse touching boss laterally (game over)
+      } else if (overlapFull && hy2 > headTop + headZone && hy < bossHitBottom) {
+        gameState = 'gameover';
+        AudioManager.stopMusic();
+        AudioManager.play('gameOver');
+        ScreenFade.start('in', 20);
+        streak = 0; multiplier = 1;
+        if (score > highScore) { highScore = score; localStorage.setItem('cavalloHighScore', highScore); }
+        if (playerNickname && !scoreSubmitted) submitScore(playerNickname, score);
+      }
+    }
+  }
+}
+
+// ==================== RENDERING ====================
+function drawBackground() {
+  if (bgLoaded) {
+    // Draw the full image in the top portion, road area is separate below
+    ctx.drawImage(bgImage, 0, 0, canvas.width, bgH);
+  } else {
+    const grad = ctx.createLinearGradient(0, 0, 0, GROUND_Y);
+    grad.addColorStop(0, '#ff6040');
+    grad.addColorStop(0.3, '#ff8855');
+    grad.addColorStop(0.6, '#cc7070');
+    grad.addColorStop(1, '#553344');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, canvas.width, GROUND_Y);
+  }
+}
+
+function drawGround() {
+  const gy = GROUND_Y;
+  ctx.fillStyle = '#1a1510';
+  ctx.fillRect(0, gy, canvas.width, ROAD_HEIGHT);
+  ctx.fillStyle = '#4a3e30';
+  ctx.fillRect(0, gy, canvas.width, 2);
+
+  // Single loop for all 3 cobblestone rows + mortar
+  for (let x = -groundOffset; x < canvas.width; x += 24) {
+    const fx = Math.floor(x);
+    ctx.fillStyle = '#2a2218'; ctx.fillRect(fx, gy + 3, 10, 8);
+    ctx.fillStyle = '#332a20'; ctx.fillRect(fx + 12, gy + 3, 10, 8);
+    ctx.fillStyle = '#2e261c'; ctx.fillRect(fx + 6, gy + 13, 10, 8);
+    ctx.fillStyle = '#262018'; ctx.fillRect(fx + 18, gy + 13, 10, 8);
+    ctx.fillStyle = '#241e16'; ctx.fillRect(fx, gy + 23, 10, 8);
+    ctx.fillStyle = '#2c2418'; ctx.fillRect(fx + 12, gy + 23, 10, 8);
+    ctx.fillStyle = '#14100a';
+    ctx.fillRect(fx + 10, gy + 3, 2, 8);
+    ctx.fillRect(fx + 16, gy + 13, 2, 8);
+    ctx.fillRect(fx + 10, gy + 23, 2, 8);
+  }
+  ctx.fillStyle = '#14100a';
+  ctx.fillRect(0, gy + 11, canvas.width, 2);
+  ctx.fillRect(0, gy + 21, canvas.width, 2);
+  ctx.fillRect(0, gy + 31, canvas.width, 2);
+  ctx.fillStyle = '#100c08';
+  ctx.fillRect(0, gy + 33, canvas.width, ROAD_HEIGHT - 33);
+}
+
+function drawHorseSprite() {
+  const isJumping = horse.jumping || !horse.grounded;
+  const img = isJumping ? sprites.horse_jump : sprites.horse_run1;
+  if (img && img.complete && img.naturalWidth > 0) {
+    // PixelLab sprites are 48x48 with ~30% transparent padding.
+    // Render at 2x native (96x96) centered on hitbox, shifted down so feet touch ground.
+    ctx.imageSmoothingEnabled = false;
+    const renderW = 96, renderH = 96;
+    const cx = horse.x + HORSE_W / 2; // center of hitbox
+    const drawX = cx - renderW / 2;
+    const drawY = horse.y - renderH + 26; // +26 shifts down (raised 2px per user)
+    ctx.drawImage(img, Math.floor(drawX), Math.floor(drawY), renderW, renderH);
+  } else {
+    drawHorseOutline(horse.x, horse.y, animFrame, isJumping);
+  }
+  // DEBUG: purple 2px hitbox outline (height reduced 15px per user)
+  ctx.strokeStyle = '#aa00ff';
+  ctx.lineWidth = 2;
+  // 80% hitbox: offsetX=6, offsetFromTop=8, w=44 (HORSE_W-11), h=62 (HORSE_H-16)
+  ctx.strokeRect(horse.x + 6, horse.y - HORSE_H + 8, HORSE_W - 11, HORSE_H - 16);
+}
+
+function drawBossSprite() {
+  let img;
+  if (bossFlashTimer > 0) {
+    img = sprites.boss_flash;
+  } else {
+    img = (animFrame === 0) ? sprites.boss_idle : sprites.boss_charge;
+  }
+  if (img && img.complete && img.naturalWidth > 0) {
+    // boss.y is bottom; top-left = (boss.x, boss.y - boss.h)
+    drawSprite(img, boss.x, boss.y - boss.h, boss.w, boss.h);
+    // HP bar is drawn separately (inside drawLiotru — call with same coords for HP bar only)
+    drawBossHPBar(boss.x, boss.y);
+  } else {
+    drawLiotru(boss.x, boss.y, animFrame); // fallback
+  }
+  // DEBUG: purple hitbox
+  ctx.strokeStyle = '#aa00ff'; ctx.lineWidth = 2;
+  // 75% hitbox debug rect: margins 16 left/17 right, 14 top/14 bottom
+  ctx.strokeRect(boss.x + 16, boss.y - boss.h + 14, boss.w - 33, boss.h - 28);
+}
+
+// Draw only the HP bar (extracted from drawLiotru for sprite mode)
+function drawBossHPBar(x, y) {
+  const s = 6;
+  const barX = x + 2*s;
+  const barY = y - 27*s;
+  for (let i = 0; i < bossHP; i++) {
+    const filled = i < (bossHP - bossHits);
+    ctx.fillStyle = filled ? '#ff2222' : '#444444';
+    ctx.fillRect(barX + i * 36, barY, 30, 12);
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(barX + i * 36, barY, 30, 12);
+  }
+}
+
+// Obstacle sprite lookup — maps obstacle type to sprite key
+const OBS_SPRITE = {
+  'fornacella1':     'fornacella1',
+  'fornacella2':     'fornacella2',
+  'fornacellaGrill': 'fornacella_grill',
+  'mafColtello':     'maf_coltello',
+  'mafLupara':       'maf_lupara',
+  'mafFornacella':   'maf_fornacella',
+};
+
+// Code-drawn fallback (kept for safety, commented-out originals below)
+const OBS_DRAW_FALLBACK = {
+  'fornacella1': (x, y) => drawFornacella1(x, y, frameCount),
+  'fornacella2': (x, y) => drawFornacella2(x, y, frameCount),
+  'fornacellaGrill': (x, y) => drawFornacellaConArrostitori(x, y, frameCount),
+  'mafColtello': drawMafiosoColtello,
+  'mafLupara': drawMafiosoLupara,
+  'mafFornacella': (x, y) => drawMafiosoFornacella(x, y, frameCount),
+};
+
+function drawObstacles() {
+  const cw = canvas.width;
+  for (let i = 0, len = obstacles.length; i < len; i++) {
+    const obs = obstacles[i];
+    if (obs.x > cw + 10 || obs.x + obs.width < -10) continue;
+    const sprKey = OBS_SPRITE[obs.type];
+    const spr = sprKey && sprites[sprKey];
+    if (spr && spr.complete && spr.naturalWidth > 0) {
+      // obs.y is bottom (GROUND_Y); top-left = (obs.x, obs.y - obs.height)
+      drawSprite(spr, obs.x, obs.y - obs.height, obs.width, obs.height);
+    } else {
+      // Fallback to code-drawn while sprites load
+      OBS_DRAW_FALLBACK[obs.type](obs.x, obs.y);
+    }
+    // DEBUG: purple hitbox
+    ctx.strokeStyle = '#aa00ff'; ctx.lineWidth = 2;
+    // 75% hitbox debug rect
+    const _hitW = obs.hitW || obs.width;
+    const _hitH = obs.hitH || obs.height;
+    const _ox = obs.x + Math.floor((obs.width - _hitW) / 2);
+    const _oy = obs.y - obs.height + Math.floor((obs.height - _hitH) / 2);
+    ctx.strokeRect(_ox, _oy, _hitW, _hitH);
+  }
+}
+
+function drawScore() {
+  // Score panel
+  ctx.fillStyle = 'rgba(0,0,0,0.75)';
+  ctx.fillRect(canvas.width - 172, 3, 169, 66);
+  ctx.strokeStyle = 'rgba(255,102,51,0.4)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(canvas.width - 172, 3, 169, 66);
+  outText('HI ' + String(highScore).padStart(5, '0'), canvas.width - 15, 22, '#ffdd33', 'bold 16px "Courier New", monospace', 'right');
+
+  // Score pulse effect: score text briefly grows and turns gold on point gains
+  const pulse = Math.max(0, scorePulseTimer / 8); // 1.0 -> 0.0
+  const scoreSize = Math.floor(16 + 4 * pulse);
+  const scoreColor = pulse > 0
+    ? '#ffee44'  // gold during pulse
+    : '#ffffff'; // white at rest
+  outText(String(score).padStart(5, '0'), canvas.width - 15, 42, scoreColor, 'bold ' + scoreSize + 'px "Courier New", monospace', 'right');
+  // Rank title
+  outText(currentRank, canvas.width - 15, 58, '#55ffee', 'bold 13px "Courier New", monospace', 'right');
+
+  // Record flash
+  if (recordFlashTimer > 0 && recordFlashTimer % 6 < 3) {
+    ctx.fillStyle = 'rgba(255,215,0,0.15)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+
+  // Left side HUD: streak & arancini
+  ctx.fillStyle = 'rgba(0,0,0,0.75)';
+  ctx.fillRect(48, 3, 134, 49);
+  ctx.strokeStyle = 'rgba(255,102,51,0.4)';
+  ctx.strokeRect(48, 3, 134, 49);
+  if (streak >= 3) {
+    outText('STREAK: ' + streak, 56, 22, '#33ff99', 'bold 13px "Courier New", monospace', 'left');
+    outText('x' + multiplier, 56, 38, '#ffdd44', 'bold 12px "Courier New", monospace', 'left');
+  }
+  // Arancini count
+  const acText = aranciniCollected + ' arancin' + (aranciniCollected === 1 ? 'u' : 'i');
+  outText(acText, streak >= 3 ? 95 : 56, streak >= 3 ? 38 : 22, '#ffcc33', 'bold 12px "Courier New", monospace', 'left');
+
+  // Home button (top-right, next to score)
+  const hx = canvas.width - 210, hy = 8, hw = 32, hh = 32;
+  btnHome = { x: hx, y: hy, w: hw, h: hh };
+  ctx.fillStyle = 'rgba(0,0,0,0.5)';
+  ctx.fillRect(hx, hy, hw, hh);
+  ctx.strokeStyle = '#ff6633';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(hx, hy, hw, hh);
+  // House icon
+  const cx = hx + hw / 2, cy = hy + hh / 2;
+  ctx.fillStyle = '#ddd';
+  ctx.beginPath();
+  ctx.moveTo(cx, cy - 9);
+  ctx.lineTo(cx + 10, cy);
+  ctx.lineTo(cx + 7, cy);
+  ctx.lineTo(cx + 7, cy + 8);
+  ctx.lineTo(cx - 7, cy + 8);
+  ctx.lineTo(cx - 7, cy);
+  ctx.lineTo(cx - 10, cy);
+  ctx.closePath();
+  ctx.fill();
+  // Door
+  ctx.fillStyle = '#ff6633';
+  ctx.fillRect(cx - 2, cy + 1, 5, 7);
+
+  // Mute button (left of home button)
+  const mx = hx - 42, my = 8, mw = 32, mh = 32;
+  btnMute = { x: mx, y: my, w: mw, h: mh };
+  ctx.fillStyle = 'rgba(0,0,0,0.5)';
+  ctx.fillRect(mx, my, mw, mh);
+  ctx.strokeStyle = AudioManager.isMuted() ? '#555' : '#ff6633';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(mx, my, mw, mh);
+  outText(AudioManager.isMuted() ? 'M' : 'S',
+    mx + mw / 2, my + mh / 2 + 5,
+    AudioManager.isMuted() ? '#666' : '#ddd',
+    'bold 14px "Courier New", monospace', 'center');
+}
+
+function drawRankCelebration() {
+  if (rankCelebrationTimer <= 0) return;
+
+  const progress = rankCelebrationTimer / 60; // 1.0 -> 0.0
+  const bannerAlpha = Math.min(progress * 2, 1); // fade out in second half
+
+  // Banner slide-in: y goes from -60 to 60 over first 15 frames (~quarter of timer)
+  const slideProgress = Math.min((60 - rankCelebrationTimer) / 15, 1);
+  const bannerY = Math.floor(-60 + slideProgress * 120);
+
+  const bannerW = Math.floor(canvas.width * 0.65);
+  const bannerX = Math.floor((canvas.width - bannerW) / 2);
+  const bannerH = 60;
+
+  ctx.save();
+  ctx.globalAlpha = bannerAlpha;
+
+  // Banner background: dark with gold border
+  ctx.fillStyle = 'rgba(10, 5, 0, 0.88)';
+  ctx.fillRect(bannerX, bannerY, bannerW, bannerH);
+  ctx.strokeStyle = '#ffdd33';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(bannerX, bannerY, bannerW, bannerH);
+
+  // Subtitle: "RANK UP!" in cyan
+  ctx.globalAlpha = bannerAlpha;
+  ctx.font = 'bold 13px "Courier New", monospace';
+  ctx.textAlign = 'center';
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = '#000';
+  ctx.lineJoin = 'round';
+  ctx.strokeText('RANK UP!', Math.floor(canvas.width / 2), bannerY + 18);
+  ctx.fillStyle = '#00ffcc';
+  ctx.fillText('RANK UP!', Math.floor(canvas.width / 2), bannerY + 18);
+
+  // Main title: rank name in gold, bold 26px
+  ctx.font = 'bold 26px "Courier New", monospace';
+  ctx.lineWidth = 4;
+  ctx.strokeStyle = '#000';
+  ctx.strokeText(rankCelebrationTitle, Math.floor(canvas.width / 2), bannerY + 48);
+  ctx.fillStyle = '#ffdd33';
+  ctx.fillText(rankCelebrationTitle, Math.floor(canvas.width / 2), bannerY + 48);
+
+  // Color burst particles (active for first 20 frames of celebration)
+  if (rankCelebrationTimer > 40) {
+    const particleProgress = (rankCelebrationTimer - 40) / 20; // 1.0 -> 0.0 over first 20 frames
+    for (let pi = 0; pi < RANK_PARTICLES.length; pi++) {
+      const p = RANK_PARTICLES[pi];
+      // Move outward
+      p.x += p.vx;
+      p.y += p.vy;
+      p.alpha = particleProgress;
+      ctx.globalAlpha = p.alpha * bannerAlpha;
+      ctx.fillStyle = p.color;
+      ctx.fillRect(Math.floor(p.x), Math.floor(p.y), 3, 3);
+    }
+  }
+
+  ctx.globalAlpha = 1;
+  ctx.restore();
+}
+
+function drawFloatingTexts() {
+  for (const ft of floatingTexts) {
+    const alpha = Math.min(1, ft.life / 20);
+    ctx.globalAlpha = alpha;
+    const font = 'bold ' + ft.size + 'px "Courier New", monospace';
+    ctx.font = font;
+    ctx.textAlign = 'center';
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = 'rgba(0,0,0,0.9)';
+    ctx.lineJoin = 'round';
+    ctx.strokeText(ft.text, ft.x, ft.y);
+    ctx.fillStyle = ft.color;
+    ctx.fillText(ft.text, ft.x, ft.y);
+    ctx.globalAlpha = 1;
+  }
+}
+
+function drawAranciniSprites() {
+  for (const a of arancini) {
+    const spr = sprites.arancino;
+    if (spr && spr.complete && spr.naturalWidth > 0) {
+      // a.x, a.y is top-left; a.w/a.h is 16x16
+      drawSprite(spr, a.x, a.y, a.w, a.h);
+    } else {
+      drawArancino(a.x, a.y); // fallback
+    }
+    // DEBUG: purple hitbox
+    ctx.strokeStyle = '#aa00ff'; ctx.lineWidth = 2;
+    ctx.strokeRect(a.x, a.y, a.w, a.h);
+  }
+}
+
+function drawMenuButton(x, y, w, h, text, hovered) {
+  // Button background
+  ctx.fillStyle = hovered ? 'rgba(255,68,0,0.5)' : 'rgba(0,0,0,0.75)';
+  ctx.fillRect(x, y, w, h);
+  // Border
+  ctx.strokeStyle = hovered ? '#ffdd00' : '#ff6633';
+  ctx.lineWidth = hovered ? 3 : 2;
+  ctx.strokeRect(x, y, w, h);
+  // Text
+  outText(text, x + w / 2, y + h / 2 + 8, hovered ? '#ffdd00' : '#ffffff', 'bold 22px "Courier New", monospace', 'center');
+}
+
+function drawMenu() {
+  drawBackground(); // PARALLAX DISABLED — Phase 04: was ParallaxBg.draw(ctx, canvas.width, bgH)
+  drawGround();
+
+  // Horse in center (PixelLab 48x48 rendered at 3x = 144x144 for menu emphasis)
+  const mspr = sprites.horse_run1;
+  if (mspr && mspr.complete && mspr.naturalWidth > 0) {
+    ctx.imageSmoothingEnabled = false;
+    const mRender = 144;
+    ctx.drawImage(mspr, Math.floor(canvas.width / 2 - mRender / 2), Math.floor(GROUND_Y - mRender + 24), mRender, mRender);
+  } else {
+    drawHorseOutline(canvas.width / 2 - 25, GROUND_Y, animFrame, false); // fallback
+  }
+
+  // Title with glow
+  ctx.textAlign = 'center';
+  ctx.shadowColor = '#ff4400';
+  ctx.shadowBlur = 15;
+  outText('U CAVADDU RUNNER', canvas.width / 2, 55, '#ffcc00', 'bold 36px "Courier New", monospace', 'center');
+  ctx.shadowBlur = 0;
+
+  outText('~ Catania Edition ~', canvas.width / 2, 78, '#ffa866', 'bold 16px "Courier New", monospace', 'center');
+
+  // Buttons
+  const bw = 260, bh = 44, gap = 10;
+  const bx = canvas.width / 2 - bw / 2;
+  const by1 = 100;
+  const by2 = by1 + bh + gap;
+  const by3 = by2 + bh + gap;
+  const by4 = by3 + bh + gap;
+
+  btnPlay = { x: bx, y: by1, w: bw, h: bh };
+  btnLeaderboard = { x: bx, y: by2, w: bw, h: bh };
+  btnRecipes = { x: bx, y: by3, w: bw, h: bh };
+  btnIntro = { x: bx, y: by4, w: bw, h: bh };
+
+  drawMenuButton(bx, by1, bw, bh, 'JUCA!', menuHover === 'play');
+  drawMenuButton(bx, by2, bw, bh, 'CLASSIFICA', menuHover === 'leaderboard');
+  const recipesLabel = 'RICETTE (' + unlockedRecipes.length + '/10)';
+  drawMenuButton(bx, by3, bw, bh, recipesLabel, menuHover === 'recipes');
+  drawMenuButton(bx, by4, bw, bh, 'INTRO & CREDITS', menuHover === 'intro');
+
+  // Nickname display under buttons
+  if (playerNickname) {
+    outText('Giocatore: ' + playerNickname, canvas.width / 2, by4 + bh + 18, '#ffcc88', 'bold 13px "Courier New", monospace', 'center');
+    outText('(cambia)', canvas.width / 2, by4 + bh + 34, '#ff8855', 'bold 12px "Courier New", monospace', 'center');
+    btnChangeNick = { x: canvas.width / 2 - 40, y: by4 + bh + 24, w: 80, h: 16 };
+  } else {
+    btnChangeNick = { x: 0, y: 0, w: 0, h: 0 };
+  }
+
+  // High score
+  if (highScore > 0) {
+    const hsY = playerNickname ? by4 + bh + 52 : by4 + bh + 22;
+    outText('Record: ' + highScore, canvas.width / 2, hsY, '#ffee55', 'bold 16px "Courier New", monospace', 'center');
+  }
+
+  // Hint
+  const hintY = playerNickname ? by4 + bh + 70 : by4 + bh + 44;
+  outText('SPAZIO = Juca  |  Sarta cu SPAZIO o tocca', canvas.width / 2, hintY, '#ffffff', 'bold 13px "Courier New", monospace', 'center');
+
+  // Credits
+  outText('Realizzato by 2 coglioni durante la festa di Sant\'Agata', canvas.width / 2, canvas.height - 26, '#eebb77', 'bold 11px "Courier New", monospace', 'center');
+  outText('@bardimito  @m.molica', canvas.width / 2, canvas.height - 10, '#ffaa66', 'bold 12px "Courier New", monospace', 'center');
+}
+
+let recipesScroll = 0;
+const RECIPES_PER_PAGE = 3;
+
+function drawRecipes() {
+  // Full dark background
+  ctx.fillStyle = '#1a0a0a';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Title
+  ctx.textAlign = 'center';
+  ctx.shadowColor = '#ff4400';
+  ctx.shadowBlur = 12;
+  outText('RICETTE CATANESI', canvas.width / 2, 38, '#ffdd00', 'bold 28px "Courier New", monospace', 'center');
+  ctx.shadowBlur = 0;
+
+  outText(unlockedRecipes.length + '/10 sbloccate', canvas.width / 2, 60, '#ffcc77', 'bold 15px "Courier New", monospace', 'center');
+
+  // Pagination
+  const totalPages = Math.ceil(RECIPES.length / RECIPES_PER_PAGE);
+  const currentPage = Math.floor(recipesScroll / RECIPES_PER_PAGE);
+  const startIdx = currentPage * RECIPES_PER_PAGE;
+  const endIdx = Math.min(startIdx + RECIPES_PER_PAGE, RECIPES.length);
+
+  // Recipe cards
+  const startY = 78;
+  const cardH = 130;
+  const cardGap = 10;
+  const cardMargin = 40;
+
+  for (let i = startIdx; i < endIdx; i++) {
+    const cardIdx = i - startIdx;
+    const cy = startY + cardIdx * (cardH + cardGap);
+    const unlocked = unlockedRecipes.includes(RECIPES[i].id);
+
+    // Card background
+    ctx.fillStyle = unlocked ? 'rgba(218,165,32,0.12)' : 'rgba(80,80,80,0.12)';
+    ctx.fillRect(cardMargin, cy, canvas.width - cardMargin * 2, cardH);
+    ctx.strokeStyle = unlocked ? 'rgba(218,165,32,0.4)' : 'rgba(100,100,100,0.3)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(cardMargin, cy, canvas.width - cardMargin * 2, cardH);
+
+    if (unlocked) {
+      // Number + name
+      outText((i + 1) + '. ' + RECIPES[i].name, canvas.width / 2, cy + 20, '#ffdd44', 'bold 16px "Courier New", monospace', 'center');
+      // Ingredients line
+      outText(RECIPES[i].desc, canvas.width / 2, cy + 40, '#ffcc88', 'bold 12px "Courier New", monospace', 'center');
+      // Preparation - wrap text
+      ctx.font = '11px "Courier New", monospace';
+      const maxW = canvas.width - cardMargin * 2 - 30;
+      const words = RECIPES[i].steps.split(' ');
+      let line = '';
+      let lineY = cy + 58;
+      for (const word of words) {
+        const test = line + (line ? ' ' : '') + word;
+        if (ctx.measureText(test).width > maxW && line) {
+          outText(line, canvas.width / 2, lineY, '#ddccaa', '11px "Courier New", monospace', 'center');
+          line = word;
+          lineY += 14;
+          if (lineY > cy + cardH - 8) break;
+        } else {
+          line = test;
+        }
+      }
+      if (line && lineY <= cy + cardH - 8) {
+        outText(line, canvas.width / 2, lineY, '#ddccaa', '11px "Courier New", monospace', 'center');
+      }
+    } else {
+      // Locked recipe
+      outText((i + 1) + '. ??? RICETTA SEGRETA ???', canvas.width / 2, cy + cardH / 2 - 6, '#777777', 'bold 16px "Courier New", monospace', 'center');
+      const rangeText = 'Sblocca tra ' + RECIPES[i].minScore + ' e ' + RECIPES[i].maxScore + ' punti';
+      outText(rangeText, canvas.width / 2, cy + cardH / 2 + 14, '#666666', 'bold 12px "Courier New", monospace', 'center');
+    }
+  }
+
+  // Pagination controls
+  const navY = startY + RECIPES_PER_PAGE * (cardH + cardGap) + 8;
+  const pageText = (currentPage + 1) + '/' + totalPages;
+  outText(pageText, canvas.width / 2, navY + 16, '#ffffff', 'bold 16px "Courier New", monospace', 'center');
+
+  // Prev / Next buttons
+  const arrowW = 60, arrowH = 32;
+  const prevX = canvas.width / 2 - 120, nextX = canvas.width / 2 + 60;
+  btnRecipesPrev = { x: prevX, y: navY, w: arrowW, h: arrowH };
+  btnRecipesNext = { x: nextX, y: navY, w: arrowW, h: arrowH };
+
+  if (currentPage > 0) {
+    drawMenuButton(prevX, navY, arrowW, arrowH, '<', false);
+  }
+  if (currentPage < totalPages - 1) {
+    drawMenuButton(nextX, navY, arrowW, arrowH, '>', false);
+  }
+
+  // Back button
+  const bbw = 180, bbh = 38;
+  const bbx = canvas.width / 2 - bbw / 2;
+  const bby = navY + arrowH + 12;
+  btnRecipesBack = { x: bbx, y: bby, w: bbw, h: bbh };
+  drawMenuButton(bbx, bby, bbw, bbh, 'MENU', false);
+}
+
+function drawLeaderboard() {
+  // Dark background
+  ctx.fillStyle = '#1a0a0a';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Title with glow
+  ctx.textAlign = 'center';
+  ctx.shadowColor = '#ff4400';
+  ctx.shadowBlur = 15;
+  outText('CLASSIFICA', canvas.width / 2, 50, '#ffcc00', 'bold 32px "Courier New", monospace', 'center');
+  ctx.shadowBlur = 0;
+
+  outText('Top 5 Giocatori', canvas.width / 2, 76, '#ffa866', 'bold 15px "Courier New", monospace', 'center');
+
+  if (leaderboardLoading) {
+    outText('Caricamento...', canvas.width / 2, 180, '#ffffff', 'bold 18px "Courier New", monospace', 'center');
+  } else if (leaderboardData.length === 0) {
+    outText('Nessun punteggio ancora!', canvas.width / 2, 180, '#888888', 'bold 16px "Courier New", monospace', 'center');
+  } else {
+    const startY = 110;
+    const rowH = 56;
+    const colors = ['#ffd700', '#c0c0c0', '#cd7f32', '#ffffff', '#ffffff'];
+    const labels = ['1°', '2°', '3°', '4°', '5°'];
+
+    for (let i = 0; i < leaderboardData.length && i < 5; i++) {
+      const entry = leaderboardData[i];
+      const ry = startY + i * rowH;
+
+      // Row background
+      ctx.fillStyle = i < 3 ? 'rgba(218,165,32,0.08)' : 'rgba(80,80,80,0.08)';
+      ctx.fillRect(80, ry, canvas.width - 160, rowH - 6);
+      ctx.strokeStyle = i < 3 ? 'rgba(218,165,32,0.3)' : 'rgba(100,100,100,0.2)';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(80, ry, canvas.width - 160, rowH - 6);
+
+      // Position
+      outText(labels[i], 120, ry + 32, colors[i], 'bold 22px "Courier New", monospace', 'center');
+
+      // Nickname
+      outText(entry.nickname || '???', canvas.width / 2 - 40, ry + 32, colors[i], 'bold 20px "Courier New", monospace', 'left');
+
+      // Score
+      outText(String(entry.score), canvas.width - 140, ry + 32, colors[i], 'bold 20px "Courier New", monospace', 'right');
+    }
+  }
+
+  // MENU button
+  const bbw = 180, bbh = 38;
+  const bbx = canvas.width / 2 - bbw / 2;
+  const bby = canvas.height - 70;
+  btnLeaderboardBack = { x: bbx, y: bby, w: bbw, h: bbh };
+  drawMenuButton(bbx, bby, bbw, bbh, 'MENU', false);
+}
+
+function drawGameOverScreen() {
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  const bx = canvas.width / 2 - 175;
+  const by = 50;
+  ctx.fillStyle = '#1a0a0a';
+  ctx.strokeStyle = '#ff4400';
+  ctx.lineWidth = 3;
+  ctx.fillRect(bx, by, 350, 240);
+  ctx.strokeRect(bx, by, 350, 240);
+
+  ctx.textAlign = 'center';
+  ctx.shadowColor = '#ff0000';
+  ctx.shadowBlur = frameCount % 20 < 10 ? 20 : 5;
+  outText('MINCHIA!', canvas.width / 2, by + 35, '#ff4400', 'bold 32px "Courier New", monospace', 'center');
+  ctx.shadowBlur = 0;
+
+  outText('U cavaddu si stummuliau!', canvas.width / 2, by + 58, '#ffe0c0', '14px "Courier New", monospace', 'center');
+
+  // Beer spilled
+  ctx.fillStyle = '#daa520';
+  ctx.fillRect(canvas.width / 2 - 8, by + 66, 16, 20);
+  ctx.fillStyle = '#fffff0';
+  ctx.fillRect(canvas.width / 2 - 8, by + 64, 16, 4);
+  ctx.fillStyle = '#e8a020';
+  ctx.fillRect(canvas.width / 2 + 10, by + 76, 8, 4);
+  ctx.fillRect(canvas.width / 2 + 14, by + 80, 6, 3);
+
+  outText('Punteggio: ' + score, canvas.width / 2, by + 105, '#fff', 'bold 20px "Courier New", monospace', 'center');
+
+  outText('Record: ' + highScore, canvas.width / 2, by + 125, '#ffdd44', 'bold 16px "Courier New", monospace', 'center');
+
+  // Gamification stats
+  outText('Rank: ' + currentRank, canvas.width / 2, by + 148, '#55ffee', 'bold 14px "Courier New", monospace', 'center');
+
+  const statsText = 'Arancini: ' + aranciniCollected + '  |  Best streak: ' + bestStreak;
+  outText(statsText, canvas.width / 2, by + 166, '#ffdd44', 'bold 13px "Courier New", monospace', 'center');
+
+  if (recordBroken) {
+    outText('NUOVO RECORD!!!', canvas.width / 2, by + 190, '#ffdd00', 'bold 16px "Courier New", monospace', 'center');
+  }
+
+  outText('SPAZIO pi ricominciare', canvas.width / 2, by + 218, '#ffffff', 'bold 14px "Courier New", monospace', 'center');
+}
+
+function render() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  if (gameState === 'menu') { drawMenu(); ScreenFade.draw(ctx, canvas.width, canvas.height); return; }
+  if (gameState === 'leaderboard') { drawLeaderboard(); ScreenFade.draw(ctx, canvas.width, canvas.height); return; }
+  if (gameState === 'recipes') { drawRecipes(); ScreenFade.draw(ctx, canvas.width, canvas.height); return; }
+  drawBackground(); // PARALLAX DISABLED — Phase 04: was ParallaxBg.draw(ctx, canvas.width, bgH)
+  drawGround();
+  drawAranciniSprites();
+  drawHorseSprite();
+  drawObstacles();
+  // --- Boss rendering ---
+  if (boss) {
+    drawBossSprite();
+    for (let i = 0; i < bossLavas.length; i++) {
+      const lv = bossLavas[i];
+      const lspr = sprites.lava;
+      if (lspr && lspr.complete && lspr.naturalWidth > 0) {
+        // lv.y is bottom; top-left = (lv.x, lv.y - lv.h)
+        drawSprite(lspr, lv.x, lv.y - lv.h, lv.w, lv.h);
+      } else {
+        drawLava(lv.x, lv.y); // fallback
+      }
+      // DEBUG: purple hitbox
+      ctx.strokeStyle = '#aa00ff'; ctx.lineWidth = 2;
+      // 60% hitbox debug rect: offset 4px each side
+      ctx.strokeRect(lv.x + 4, lv.y - lv.h + 4, lv.w - 8, lv.h - 8);
+    }
+    // Boss intro text with glow
+    if (bossIntroTimer > 0) {
+      ctx.globalAlpha = Math.min(1, bossIntroTimer / 20);
+      ctx.shadowColor = '#ff4400';
+      ctx.shadowBlur = 20;
+      outText('U LIOTRU!!!', canvas.width / 2, canvas.height / 2 - 60, '#ff4400', 'bold 36px "Courier New", monospace', 'center');
+      ctx.shadowBlur = 0;
+      ctx.globalAlpha = 1;
+    }
+  }
+  drawScore();
+  drawFloatingTexts();
+  drawRankCelebration();
+  if (gameState === 'gameover') drawGameOverScreen();
+  // ScreenFade drawn last — overlays everything
+  ScreenFade.draw(ctx, canvas.width, canvas.height);
+}
+
+let lastTime = 0;
+function gameLoop(timestamp) {
+  if (!lastTime) lastTime = timestamp;
+  const elapsed = timestamp - lastTime;
+  lastTime = timestamp;
+  // dt = 1.0 at 60fps (16.67ms), scales up if slower
+  const dt = Math.min(elapsed / 16.667, 3); // cap at 3x to avoid tunneling
+  update(dt);
+  render();
+  requestAnimationFrame(gameLoop);
+}
+AudioManager.init();
+fetchLeaderboard();
+requestAnimationFrame(gameLoop);
+</script>
+</body>
+</html>
