@@ -1,0 +1,19 @@
+{
+  "agents": {
+    "defaults": {
+      "workspace": "/home/oc-cavallo/.openclaw/workspace",
+      "model": "anthropic/claude-sonnet-4-6",
+      "maxConcurrent": 2,
+      "subagents": {
+        "maxConcurrent": 2,
+        "maxSpawnDepth": 1,
+        "maxChildrenPerAgent": 1
+      }
+    },
+    "list": [
+      {
+        "id": "main"
+      }
+    ]
+  }
+}
