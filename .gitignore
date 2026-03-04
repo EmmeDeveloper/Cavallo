@@ -1,2 +1,5 @@
-index.src.html
-temp_*
+.openclaw/
+.bashrc
+*.bak
+*.zip
+node_modules/
