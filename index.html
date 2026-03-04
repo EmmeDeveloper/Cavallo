@@ -516,7 +516,6 @@ loadSprite('lava',             'sprites/lava.png');
 // because sprites are generated at their exact hitbox dimensions.
 function drawSprite(img, x, y, w, h) {
   if (!img || !img.complete || img.naturalWidth === 0) return;
-  ctx.imageSmoothingEnabled = false;
   ctx.drawImage(img, Math.floor(x), Math.floor(y), w, h);
 }
 
@@ -1834,8 +1833,8 @@ function update(dt) {
       // Use hitW/hitH (75% of sprite) for collision, centered on sprite
       const hitW = obs.hitW || obs.width;
       const hitH = obs.hitH || obs.height;
-      const ox = obs.x + Math.floor((obs.width - hitW) / 2);
-      const oy = obs.y - obs.height + Math.floor((obs.height - hitH) / 2);
+      const ox = obs.x + ((obs.width - hitW) >> 1);
+      const oy = obs.y - obs.height + ((obs.height - hitH) >> 1);
       if (hx < ox + hitW && hx2 > ox && hy < oy + hitH && hy2 > oy) {
         gameState = 'gameover';
         AudioManager.stopMusic();
@@ -2166,11 +2165,10 @@ function drawHorseSprite() {
   if (img && img.complete && img.naturalWidth > 0) {
     // PixelLab sprites are 48x48 with ~30% transparent padding.
     // Render at 2x native (96x96) centered on hitbox, shifted down so feet touch ground.
-    ctx.imageSmoothingEnabled = false;
-    const renderW = 96, renderH = 96;
+    const renderW = 80, renderH = 80;
     const cx = horse.x + HORSE_W / 2; // center of hitbox
     const drawX = cx - renderW / 2;
-    const drawY = horse.y - renderH + 26; // +26 shifts down (raised 2px per user)
+    const drawY = horse.y - renderH + Math.floor(renderH * 0.15); // ~15% transparent padding at bottom
     ctx.drawImage(img, Math.floor(drawX), Math.floor(drawY), renderW, renderH);
   } else {
     drawHorseOutline(horse.x, horse.y, animFrame, isJumping);
@@ -2713,6 +2711,7 @@ function drawGameOverScreen() {
 }
 
 function render() {
+  ctx.imageSmoothingEnabled = false;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   if (gameState === 'menu') { drawMenu(); ScreenFade.draw(ctx, canvas.width, canvas.height); return; }
   if (gameState === 'leaderboard') { drawLeaderboard(); ScreenFade.draw(ctx, canvas.width, canvas.height); return; }
