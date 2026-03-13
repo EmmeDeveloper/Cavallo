@@ -1857,15 +1857,37 @@ function update(dt) {
   obstacles.length = writeIdx;
 
   // --- Arancino spawn (contextual, not during boss) ---
+  // Safety: arancini must not spawn near obstacles so the player isn't
+  // lured into jumping and landing on an obstacle.
   framesSinceLastArancino++;
   if (!boss) {
     const arancinoInterval = 120 + Math.floor((speed - 5.0) * 15);
     if (framesSinceLastArancino >= arancinoInterval && arancini.length < 3) {
-      const minH = 50 + Math.floor((speed - 5.0) * 5);
-      const maxH = 110 + Math.floor((speed - 5.0) * 8);
-      const h = minH + Math.random() * (maxH - minH);
-      arancini.push({ x: canvas.width + 10, y: GROUND_Y - h, w: 16, h: 16 });
-      framesSinceLastArancino = 0;
+      const aSpawnX = canvas.width + 10;
+      // Check that no obstacle is close enough to create a trap.
+      // The safe zone extends behind and ahead of the arancino to account
+      // for the horizontal distance the horse travels during a full jump arc.
+      // Jump duration ≈ 2*|JUMP_FORCE|/GRAVITY frames, distance = speed * jumpDur.
+      const jumpDuration = 2 * Math.abs(JUMP_FORCE) / GRAVITY;
+      const jumpTravelDist = speed * jumpDuration;
+      const safeMargin = jumpTravelDist + 40; // extra padding
+      let tooCloseToObstacle = false;
+      for (let oi = 0; oi < obstacles.length; oi++) {
+        const obs = obstacles[oi];
+        // obstacle is "nearby" if it overlaps the horizontal danger zone
+        if (obs.x + obs.width > aSpawnX - safeMargin && obs.x < aSpawnX + safeMargin) {
+          tooCloseToObstacle = true;
+          break;
+        }
+      }
+      if (!tooCloseToObstacle) {
+        const minH = 50 + Math.floor((speed - 5.0) * 5);
+        const maxH = 110 + Math.floor((speed - 5.0) * 8);
+        const h = minH + Math.random() * (maxH - minH);
+        arancini.push({ x: aSpawnX, y: GROUND_Y - h, w: 16, h: 16 });
+        framesSinceLastArancino = 0;
+      }
+      // If too close, don't reset timer — try again next frame
     }
   }
 
